@@ -1,0 +1,50 @@
+body {
+	font-family: "Helvetica", arial, sans-serif;
+	font-size: 14px;
+	color: #2c3e50;
+}
+
+h1 {
+	font-size: 30px;
+	text-align: center;
+	color: #e74c3c;
+	border: 5px dashed;
+}
+
+#console {
+	background-color: #ecf0f1;
+	width: 40em;
+	height: 15em;
+	overflow: auto;
+	border: 1px dashed;
+}
+
+.output {
+	color: #3498db;
+}
+
+.button {
+	background-color: #2ecc71;
+	text-transform: uppercase;
+	color: #FFFFFF;
+	word-spacing: 025em;
+	border: none;
+	padding: 12px 13px 11px;
+	line-height: 22px;
+	display: inline-block;
+	margin-top: 5px;
+	margin-bottom: 18px;
+}
+
+.ctrl {
+	background-color: #7f8c8d;
+	text-transform: uppercase;
+	color: #FFFFFF;
+	word-spacing: 025em;
+	border: none;
+	padding: 12px 13px 11px;
+	line-height: 22px;
+	display: inline-block;
+	margin-top: 5px;
+	margin-bottom: 18px;
+}
