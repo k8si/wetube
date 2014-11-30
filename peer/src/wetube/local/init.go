@@ -109,27 +109,45 @@ func invitePeers() {
 			return
 		}
 		fmt.Println("got connection for peer @", addr)
-		foo(addr, conn)
+		handshake(addr, conn)
 	}
 }
 
-func foo(dest string, conn *net.TCPConn) {
-	fmt.Println("foo")
+//set up the initial connection between this node and the peer
+func handshake(dest string, conn *net.TCPConn) {
+	fmt.Println("trying handshake....")
+
 	origin := myself.ipaddr
 	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
+
+	//try and contact the peer
 	ws, err := websocket.Dial("ws://"+dest+":3000/ws", "", "http://"+origin)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//send the peer its public ip address
 	if _, err := ws.Write([]byte(dest)); err != nil {
 		log.Fatal(err)
 	}
-	var msg = make([]byte, 512)
-	var n int
-	if n, err = ws.Read(msg); err != nil {
+	var ack1 = make([]byte, 512)
+	var n1 int
+	if n1, err = ws.Read(ack1); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Received %s.\n", msg[:n])
+	fmt.Printf("Received %s.\n", ack1[:n1])
+
+	//send the peer my public ip address
+	if _, err := ws.Write([]byte(origin)); err != nil {
+		log.Fatal(err)
+	}
+	var ack2 = make([]byte, 512)
+	var n2 int
+	if n2, err = ws.Read(ack2); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Received %s.\n", ack2[:n2])
+
 }
 
 func (h *hub) run() {

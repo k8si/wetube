@@ -68,19 +68,35 @@ func checkError(err error) {
 }
 
 func handleConnect(ws *websocket.Conn) {
-	fmt.Println("handleConnect....")
-	// // fmt.Println("doing initLocalSocket()....")
-	var msg string
-	err := websocket.Message.Receive(ws, &msg)
+	fmt.Println("handleConnect...")
+	var myIP string
+	err := websocket.Message.Receive(ws, &myIP)
 	if err != nil {
-		fmt.Println("ProcessSocket: got error", err)
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
-		return
+		log.Fatal(err)
 	}
-	fmt.Println("success! received message: ", msg)
-	fmt.Println("message: remote addr: ", ws.RemoteAddr(), "; local addr: ", ws.LocalAddr())
-	myself = Peer{ipaddr: msg, port: "3000", wid: rune(numConnected)}
-	websocket.Message.Send(ws, "ACK! --"+myself.ipaddr)
+	fmt.Println("success! received message: ", myIP)
+	myself = Peer{ipaddr: myIP, port: "3000", wid: rune(numConnected)}
+	peers = append(peers, myself)
+	websocket.Message.Send(ws, "1")
+	numConnected += 1
+
+	var otherIP string
+	err = websocket.Message.Receive(ws, &otherIP)
+	if err != nil {
+		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
+		log.Fatal(err)
+	}
+	fmt.Println("success! received message: ", otherIP)
+	other := Peer{ipaddr: otherIP, port: "3000", wid: rune(numConnected)}
+	peers = append(peers, other)
+	websocket.Message.Send(ws, "1")
+
+	fmt.Println("connected peers:")
+	for _, p := range peers {
+		fmt.Println(p.ipaddr)
+	}
+	fmt.Println("")
 	// //inc numConnected (as I am now connected)
 	// numConnected += 1
 	// //if len(peers) == 0 (I am the init director) { invitePeers }
