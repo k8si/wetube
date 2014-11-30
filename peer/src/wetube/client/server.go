@@ -100,6 +100,17 @@ func handleConnect(ws *websocket.Conn) {
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 	h.register <- c
 	defer func() { h.unregister <- c }()
+
+	//now wait for new messages
+	for {
+		var m string
+		err = websocket.Message.Receive(ws, &m)
+		if err != nil {
+			break
+		}
+		fmt.Println("got new message: ", m)
+		// h.broadcast <- []byte(m)
+	}
 }
 
 func (h *hub) run() {

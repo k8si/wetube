@@ -78,13 +78,24 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 	}
 	fmt.Println("go message: ", msg)
 	myself = Peer{ipaddr: msg, port: "3000", wid: rune(numConnected)}
-	websocket.Message.Send(ws, "ACK! --local")
+	websocket.Message.Send(ws, "1")
 	//inc numConnected (as I am now connected)
 	numConnected += 1
 	//if len(peers) == 0 (I am the init director) { invitePeers }
 	// else demote my permissions
 	if len(peers) == 0 {
 		invitePeers()
+	}
+
+	//now wait for new messages
+	for {
+		var m string
+		err = websocket.Message.Receive(ws, &m)
+		if err != nil {
+			break
+		}
+		fmt.Println("got new message: ", m)
+		h.broadcast <- []byte(m)
 	}
 
 }
