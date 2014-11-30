@@ -1,5 +1,12 @@
 package main
 
+/*
+TODO
+- should be able to just run this code on local, EC2 (instead of separating init.go and server.go)
+- how to set node ids? do we need node ids?
+- how to set permission lvls?
+*/
+
 //assume this is the initial node in the network
 
 import (
@@ -9,7 +16,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
+	// "os"
 )
 
 type hub struct {
@@ -52,18 +59,14 @@ var (
 )
 
 func main() {
+	//get permission lvl off cmdline?
 	service := ":3000"
 	fmt.Println("listening on ", service)
 	go h.run()
 	http.Handle("/websocket/", websocket.Handler(initBrowser2ClientSocket))
 	err := http.ListenAndServe(service, nil)
-	checkError(err)
-}
-
-func checkError(err error) {
 	if err != nil {
-		fmt.Println("fatal error: ", err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
@@ -72,28 +75,24 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 	var msg string
 	err := websocket.Message.Receive(ws, &msg)
 	if err != nil {
-		fmt.Println("ProcessSocket: got error", err)
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
-		return
+		log.Fatal(err)
 	}
 	fmt.Println("go message: ", msg)
 	myself = Peer{ipaddr: msg, port: "3000", wid: rune(numConnected)}
 	websocket.Message.Send(ws, "1")
-	//inc numConnected (as I am now connected)
-	numConnected += 1
-	//if len(peers) == 0 (I am the init director) { invitePeers }
-	// else demote my permissions
-	if len(peers) == 0 {
+	if len(h.connections) == 0 && permission == DIRECTOR {
 		connections := invitePeers()
-		num := len(connections)
-		fmt.Println("est. ", num, "connections")
 		for _, c := range connections {
 			h.register <- &c
 			go listen(c.ws)
 			go c.writer()
 			defer func() { h.unregister <- &c }()
 		}
+		num := len(connections)
+		fmt.Println("est. ", num, "connections")
 	}
+
 	//now wait for new instructions from js-client
 	listen(ws)
 }
@@ -159,6 +158,11 @@ func handshake(dest string, conn *net.TCPConn) connection {
 		log.Fatal(err)
 	}
 	fmt.Printf("Received %s.\n", ack2[:n2])
+
+	//TODO send the peer their permission lvl?
+	//TODO send all of this in a single msg?
+	// or ping --> ACK --> send info --> ACK
+
 	c := connection{send: make(chan []byte, 256), ws: ws}
 	return c
 }
@@ -214,14 +218,3 @@ func (c *connection) writer() {
 	}
 	c.ws.Close()
 }
-
-// func (c *connection) reader() {
-// 	for {
-// 		_, message, err := c.ws.ReadMessage()
-// 		if err != nil {
-// 			break
-// 		}
-// 		h.broadcast <- message
-// 	}
-// 	c.ws.Close()
-// }
