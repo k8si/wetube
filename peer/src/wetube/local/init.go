@@ -131,6 +131,12 @@ func handshake(dest string, conn *net.TCPConn) connection {
 	fmt.Println("trying handshake....")
 
 	origin := myself.ipaddr
+
+	if dest == origin {
+		c := connection{send: make(chan []byte, 256), ws: nil}
+		return c
+	}
+
 	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
 
 	//try and contact the peer
