@@ -77,7 +77,7 @@ func handleConnect(ws *websocket.Conn) {
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
 		return
 	}
-	fmt.Println("success!")
+	fmt.Println("success! received message: ", msg)
 	fmt.Println("message: remote addr: ", ws.RemoteAddr(), "; local addr: ", ws.LocalAddr())
 	myself = Peer{ipaddr: msg, port: "3000", wid: rune(numConnected)}
 	websocket.Message.Send(ws, "ACK! --"+myself.ipaddr)

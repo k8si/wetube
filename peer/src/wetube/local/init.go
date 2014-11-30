@@ -109,7 +109,7 @@ func invitePeers() {
 			return
 		}
 		fmt.Println("got connection for peer @", addr)
-		foo(addr+":3000", conn)
+		foo(addr, conn)
 	}
 }
 
@@ -117,11 +117,11 @@ func foo(dest string, conn *net.TCPConn) {
 	fmt.Println("foo")
 	origin := myself.ipaddr
 	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
-	ws, err := websocket.Dial("ws://"+dest+"/ws", "", "http://"+origin)
+	ws, err := websocket.Dial("ws://"+dest+":3000/ws", "", "http://"+origin)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := ws.Write([]byte("hello world\n")); err != nil {
+	if _, err := ws.Write([]byte(dest)); err != nil {
 		log.Fatal(err)
 	}
 	var msg = make([]byte, 512)
