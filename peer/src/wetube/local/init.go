@@ -64,6 +64,8 @@ func main() {
 	fmt.Println("listening on ", service)
 	go h.run()
 	http.Handle("/websocket/", websocket.Handler(initBrowser2ClientSocket))
+	http.Handle("/ws", websocket.Handler(initBrowser2ClientSocket))
+
 	err := http.ListenAndServe(service, nil)
 	if err != nil {
 		log.Fatal(err)
