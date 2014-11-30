@@ -99,7 +99,7 @@ func handleConnect(ws *websocket.Conn) {
 
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 	h.register <- c
-	defer func() { h.unregister <- c }()
+	// defer func() { h.unregister <- c }()
 	go listen(c.ws)
 
 	// //now wait for new messages
@@ -120,10 +120,11 @@ func listen(ws *websocket.Conn) {
 		var m string
 		err := websocket.Message.Receive(ws, &m)
 		if err != nil {
+			_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
 			break
 		}
 		fmt.Println("got new message: ", m)
-		h.broadcast <- []byte(m)
+		// h.broadcast <- []byte(m)
 	}
 }
 
