@@ -84,23 +84,21 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 	//if len(peers) == 0 (I am the init director) { invitePeers }
 	// else demote my permissions
 	if len(peers) == 0 {
-		invitePeers()
-	}
-
-	//now wait for new messages
-	for {
-		var m string
-		err = websocket.Message.Receive(ws, &m)
-		if err != nil {
-			break
+		connections := invitePeers()
+		num := len(connections)
+		fmt.Println("est. ", num, "connections")
+		for _, c := range connections {
+			h.register <- &c
+			go listen(c.ws)
+			defer func() { h.unregister <- &c }()
 		}
-		fmt.Println("got new message: ", m)
-		h.broadcast <- []byte(m)
 	}
-
+	//now wait for new instructions from js-client
+	listen(ws)
 }
 
-func invitePeers() {
+func invitePeers() []connection {
+	connections := []connection{}
 	for _, addr := range knownAddrs {
 		if addr == myself.ipaddr {
 			// fmt.Println(addr, " is me!")
@@ -112,20 +110,22 @@ func invitePeers() {
 		tcpAddr, err := net.ResolveTCPAddr("tcp", addr+":3000")
 		if err != nil {
 			fmt.Println("ResolveTCPAddr error", err.Error())
-			return
+			log.Fatal(err)
 		}
 		conn, err := net.DialTCP("tcp", nil, tcpAddr)
 		if err != nil {
 			fmt.Println("DialTCP error", err.Error())
-			return
+			log.Fatal(err)
 		}
 		fmt.Println("got connection for peer @", addr)
-		handshake(addr, conn)
+		c := handshake(addr, conn)
+		connections = append(connections, c)
 	}
+	return connections
 }
 
 //set up the initial connection between this node and the peer
-func handshake(dest string, conn *net.TCPConn) {
+func handshake(dest string, conn *net.TCPConn) connection {
 	fmt.Println("trying handshake....")
 
 	origin := myself.ipaddr
@@ -158,24 +158,38 @@ func handshake(dest string, conn *net.TCPConn) {
 		log.Fatal(err)
 	}
 	fmt.Printf("Received %s.\n", ack2[:n2])
+	c := connection{send: make(chan []byte, 256), ws: ws}
+	return c
+}
 
-	c := &connection{send: make(chan []byte, 256), ws: ws}
-	h.register <- c
-	defer func() { h.unregister <- c }()
-
+func listen(ws *websocket.Conn) {
+	//now wait for new messages
+	for {
+		var m string
+		err := websocket.Message.Receive(ws, &m)
+		if err != nil {
+			break
+		}
+		fmt.Println("got new message: ", m)
+		h.broadcast <- []byte(m)
+	}
 }
 
 func (h *hub) run() {
 	for {
 		select {
 		case c := <-h.register:
+			fmt.Println("registering new connection.")
 			h.connections[c] = true
 		case c := <-h.unregister:
+			fmt.Println("unregistering connection")
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
 			}
 		case m := <-h.broadcast:
+			npeers := len(h.connections)
+			fmt.Println("rcvd broadcast. sending to ", npeers, "peers...")
 			for c := range h.connections {
 				select {
 				case c.send <- m:
@@ -186,5 +200,25 @@ func (h *hub) run() {
 			}
 		}
 	}
-
 }
+
+func (c *connection) writer() {
+	for message := range c.send {
+		_, err := c.ws.Write(message)
+		if err != nil {
+			break
+		}
+	}
+	c.ws.Close()
+}
+
+// func (c *connection) reader() {
+// 	for {
+// 		_, message, err := c.ws.ReadMessage()
+// 		if err != nil {
+// 			break
+// 		}
+// 		h.broadcast <- message
+// 	}
+// 	c.ws.Close()
+// }

@@ -100,16 +100,30 @@ func handleConnect(ws *websocket.Conn) {
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 	h.register <- c
 	defer func() { h.unregister <- c }()
+	go listen(c.ws)
 
+	// //now wait for new messages
+	// for {
+	// 	var m string
+	// 	err = websocket.Message.Receive(ws, &m)
+	// 	if err != nil {
+	// 		break
+	// 	}
+	// 	fmt.Println("got new message: ", m)
+	// 	// h.broadcast <- []byte(m)
+	// }
+}
+
+func listen(ws *websocket.Conn) {
 	//now wait for new messages
 	for {
 		var m string
-		err = websocket.Message.Receive(ws, &m)
+		err := websocket.Message.Receive(ws, &m)
 		if err != nil {
 			break
 		}
 		fmt.Println("got new message: ", m)
-		// h.broadcast <- []byte(m)
+		h.broadcast <- []byte(m)
 	}
 }
 
@@ -117,13 +131,17 @@ func (h *hub) run() {
 	for {
 		select {
 		case c := <-h.register:
+			fmt.Println("registering new connection.")
 			h.connections[c] = true
 		case c := <-h.unregister:
+			fmt.Println("unregistering connection")
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
 			}
 		case m := <-h.broadcast:
+			npeers := len(h.connections)
+			fmt.Println("rcvd broadcast. sending to ", npeers, "peers...")
 			for c := range h.connections {
 				select {
 				case c.send <- m:
@@ -134,7 +152,6 @@ func (h *hub) run() {
 			}
 		}
 	}
-
 }
 
 // func foo(dest string, conn *net.TCPConn) {
