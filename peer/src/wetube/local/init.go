@@ -86,10 +86,12 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 	if len(h.connections) == 0 && permission == DIRECTOR {
 		connections := invitePeers()
 		for _, c := range connections {
-			h.register <- &c
-			go listen(c.ws)
-			go c.writer()
-			defer func() { h.unregister <- &c }()
+			if c.ws != nil {
+				h.register <- &c
+				go listen(c.ws)
+				go c.writer()
+				defer func() { h.unregister <- &c }()
+			}
 		}
 		num := len(connections)
 		fmt.Println("est. ", num, "connections")
