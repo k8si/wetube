@@ -1,18 +1,21 @@
 body {
 	font-family: "Helvetica", arial, sans-serif;
 	font-size: 14px;
-	color: #2c3e50;
+	color: #000000;
 }
 
 h1 {
-	font-size: 30px;
+	font-size: 70px;
 	text-align: center;
-	color: #e74c3c;
-	border: 5px dashed;
+	text-transform: uppercase;
+	color: #000000;
+	border: 12px dashed;
+	padding: 30px;
+	margin: 10px 10px 10px 10px;
 }
 
 #console {
-	background-color: #ecf0f1;
+	background-color: #FFFFFF;
 	width: 40em;
 	height: 15em;
 	overflow: auto;
@@ -20,11 +23,11 @@ h1 {
 }
 
 .output {
-	color: #3498db;
+	color: #000000;
 }
 
 .button {
-	background-color: #2ecc71;
+	background-color: #000000;
 	text-transform: uppercase;
 	color: #FFFFFF;
 	word-spacing: 025em;
@@ -34,10 +37,12 @@ h1 {
 	display: inline-block;
 	margin-top: 5px;
 	margin-bottom: 18px;
+	margin-right: 50px;
+	margin-left: 50px;
 }
 
 .ctrl {
-	background-color: #7f8c8d;
+	background-color: #000000;
 	text-transform: uppercase;
 	color: #FFFFFF;
 	word-spacing: 025em;
@@ -47,4 +52,6 @@ h1 {
 	display: inline-block;
 	margin-top: 5px;
 	margin-bottom: 18px;
+	margin-right: 50px;
+	margin-left: 50px;
 }

@@ -13,16 +13,17 @@ datavals = {"SUCC": "1", "FAIL": "0"}
 $(function() {
 	$('#connect-button').click(function() {
 		status = statvals['DIS'];
-		// ipaddr = $('#ipaddr').val();
-		// if ((ipaddr == null) || (ipaddr == '')) {
-		// 	alert('you need to provide an ip address');
-		// 	return;
-		// }
+		ipaddr = $('#ipaddr').val();
+		if ((ipaddr == null) || (ipaddr == '')) {
+			alert('you need to provide an ip address');
+			return;
+		}
+		service = ipaddr;
 		// service = ipaddr + ':8080';
 		// service = '174.62.219.8:8000';
-		service = 'localhost:8000';
+		// service = 'localhost:8000';
 		if (ws != null) ws.close();
-		ws = new WebSocket('ws://localhost:1337/websocket/ws');
+		ws = new WebSocket('ws://localhost:3000/websocket/ws');
 		if (ws == null) {
 			console.log('socket creation failed');
 			return;
