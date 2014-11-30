@@ -7,7 +7,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"log"
-	"net"
+	// "net"
 	"net/http"
 	"os"
 )
@@ -75,7 +75,7 @@ func handleConnect(ws *websocket.Conn) {
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
 		log.Fatal(err)
 	}
-	fmt.Println("success! received message: ", myIP)
+	fmt.Println("success! my ip addr:", myIP)
 	myself = Peer{ipaddr: myIP, port: "3000", wid: rune(numConnected)}
 	peers = append(peers, myself)
 	websocket.Message.Send(ws, "1")
@@ -87,7 +87,7 @@ func handleConnect(ws *websocket.Conn) {
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
 		log.Fatal(err)
 	}
-	fmt.Println("success! received message: ", otherIP)
+	fmt.Println("success! other ip addr: ", otherIP)
 	other := Peer{ipaddr: otherIP, port: "3000", wid: rune(numConnected)}
 	peers = append(peers, other)
 	websocket.Message.Send(ws, "1")
@@ -96,34 +96,10 @@ func handleConnect(ws *websocket.Conn) {
 	for _, p := range peers {
 		fmt.Println(p.ipaddr)
 	}
-	fmt.Println("")
-	// //inc numConnected (as I am now connected)
-	// numConnected += 1
-	// //if len(peers) == 0 (I am the init director) { invitePeers }
-	// // else demote my permissions
-	// // if len(peers) == 0 {
-	// // invitePeers()
-	// // }
 
-}
-
-func foo(dest string, conn *net.TCPConn) {
-	fmt.Println("foo")
-	origin := myself.ipaddr
-	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
-	ws, err := websocket.Dial(dest, "", origin)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := ws.Write([]byte("hello world\n")); err != nil {
-		log.Fatal(err)
-	}
-	var msg = make([]byte, 512)
-	var n int
-	if n, err = ws.Read(msg); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Received %s.\n", msg[:n])
+	c := &connection{send: make(chan []byte, 256), ws: ws}
+	h.register <- c
+	defer func() { h.unregister <- c }()
 }
 
 func (h *hub) run() {
@@ -149,6 +125,49 @@ func (h *hub) run() {
 	}
 
 }
+
+// func foo(dest string, conn *net.TCPConn) {
+// 	fmt.Println("foo")
+// 	origin := myself.ipaddr
+// 	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
+// 	ws, err := websocket.Dial(dest, "", origin)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	if _, err := ws.Write([]byte("hello world\n")); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	var msg = make([]byte, 512)
+// 	var n int
+// 	if n, err = ws.Read(msg); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("Received %s.\n", msg[:n])
+// }
+
+// func (h *hub) run() {
+// 	for {
+// 		select {
+// 		case c := <-h.register:
+// 			h.connections[c] = true
+// 		case c := <-h.unregister:
+// 			if _, ok := h.connections[c]; ok {
+// 				delete(h.connections, c)
+// 				close(c.send)
+// 			}
+// 		case m := <-h.broadcast:
+// 			for c := range h.connections {
+// 				select {
+// 				case c.send <- m:
+// 				default:
+// 					delete(h.connections, c)
+// 					close(c.send)
+// 				}
+// 			}
+// 		}
+// 	}
+
+// }
 
 // package main
 

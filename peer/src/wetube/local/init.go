@@ -92,7 +92,7 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 func invitePeers() {
 	for _, addr := range knownAddrs {
 		if addr == myself.ipaddr {
-			fmt.Println(addr, " is me!")
+			// fmt.Println(addr, " is me!")
 			continue
 		}
 		fmt.Println("inviting ", addr, "....")
@@ -147,6 +147,10 @@ func handshake(dest string, conn *net.TCPConn) {
 		log.Fatal(err)
 	}
 	fmt.Printf("Received %s.\n", ack2[:n2])
+
+	c := &connection{send: make(chan []byte, 256), ws: ws}
+	h.register <- c
+	defer func() { h.unregister <- c }()
 
 }
 
