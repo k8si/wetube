@@ -90,6 +90,7 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 		for _, c := range connections {
 			h.register <- &c
 			go listen(c.ws)
+			go c.writer()
 			defer func() { h.unregister <- &c }()
 		}
 	}
@@ -203,7 +204,9 @@ func (h *hub) run() {
 }
 
 func (c *connection) writer() {
+	fmt.Println("c.writer()...")
 	for message := range c.send {
+		fmt.Println("writing message: ", string(message))
 		_, err := c.ws.Write(message)
 		if err != nil {
 			break

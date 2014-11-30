@@ -99,7 +99,7 @@ func handleConnect(ws *websocket.Conn) {
 
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 	h.register <- c
-	// defer func() { h.unregister <- c }()
+	defer func() { h.unregister <- c }()
 	listen(c.ws)
 
 	// //now wait for new messages
