@@ -100,7 +100,7 @@ func handleConnect(ws *websocket.Conn) {
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 	h.register <- c
 	// defer func() { h.unregister <- c }()
-	go listen(c.ws)
+	listen(c.ws)
 
 	// //now wait for new messages
 	// for {
@@ -124,7 +124,7 @@ func listen(ws *websocket.Conn) {
 			break
 		}
 		fmt.Println("got new message: ", m)
-		// h.broadcast <- []byte(m)
+		h.broadcast <- []byte(m)
 	}
 }
 
@@ -143,14 +143,15 @@ func (h *hub) run() {
 		case m := <-h.broadcast:
 			npeers := len(h.connections)
 			fmt.Println("rcvd broadcast. sending to ", npeers, "peers...")
-			for c := range h.connections {
-				select {
-				case c.send <- m:
-				default:
-					delete(h.connections, c)
-					close(c.send)
-				}
-			}
+			fmt.Println("msg: ", m)
+			// for c := range h.connections {
+			// 	select {
+			// 	case c.send <- m:
+			// 	default:
+			// 		delete(h.connections, c)
+			// 		close(c.send)
+			// 	}
+			// }
 		}
 	}
 }
