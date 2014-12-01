@@ -52,7 +52,7 @@ type Peer struct {
 
 var (
 	peers        = []Peer{}
-	knownAddrs   = []string{"54.149.39.226", "24.128.54.88"}
+	knownAddrs   = []string{"54.149.39.226", "174.62.219.8"}
 	myself       Peer
 	permission   = DIRECTOR
 	numConnected = 0
