@@ -19,11 +19,9 @@ $(function() {
 			return;
 		}
 		service = ipaddr;
-		// service = ipaddr + ':8080';
-		// service = '174.62.219.8:8000';
-		// service = 'localhost:8000';
 		if (ws != null) ws.close();
-		ws = new WebSocket('ws://localhost:3000/websocket/ws');
+		var sockurl = 'ws://'+ipaddr+':3000/ws'
+		ws = new WebSocket(sockurl);
 		if (ws == null) {
 			console.log('socket creation failed');
 			return;
@@ -82,7 +80,7 @@ $(function() {
 		console.log('trying to send message: ' + msg);
 		if ((ws != null)) { //&& (status == statvals['CONN'])){
 			ws.send(msg);
-			console.log('status = ' + status + '; sent msg anyway.');
+			// console.log('status = ' + status + '; sent msg.');
 		} else {
 			if (ws == null) console.log('sendMessage: no ws');
 			if (status != statvals['CONN']) console.log('sendMessage: status != connected');

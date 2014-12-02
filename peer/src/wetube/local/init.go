@@ -11,10 +11,10 @@ TODO
 
 import (
 	// "bufio"
-	"code.google.com/p/go.net/websocket"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"log"
-	"net"
+	// "net"
 	"net/http"
 	// "os"
 )
@@ -45,9 +45,10 @@ const (
 )
 
 type Peer struct {
-	ipaddr string
-	port   string
-	wid    rune
+	ipaddr     string
+	diraddr    string
+	nodeId     rune
+	permission rune
 }
 
 var (
@@ -63,7 +64,7 @@ func main() {
 	service := ":3000"
 	fmt.Println("listening on ", service)
 	go h.run()
-	http.Handle("/websocket/", websocket.Handler(initBrowser2ClientSocket))
+	// http.Handle("/websocket/", websocket.Handler(initBrowser2ClientSocket))
 	http.Handle("/ws", websocket.Handler(initBrowser2ClientSocket))
 
 	err := http.ListenAndServe(service, nil)
@@ -73,121 +74,146 @@ func main() {
 }
 
 func initBrowser2ClientSocket(ws *websocket.Conn) {
-	fmt.Println("doing initLocalSocket()....")
+	fmt.Println("doing initBrowser2ClientSocket()....")
 	var msg string
 	err := websocket.Message.Receive(ws, &msg)
 	if err != nil {
 		_ = websocket.Message.Send(ws, "FAIL:"+err.Error())
 		log.Fatal(err)
 	}
-	fmt.Println("go message: ", msg)
-	myself = Peer{ipaddr: msg, port: "3000", wid: rune(numConnected)}
+	fmt.Println("got message: ", msg)
 	websocket.Message.Send(ws, "1")
-	if len(h.connections) == 0 && permission == DIRECTOR {
-		connections := invitePeers()
-		for _, c := range connections {
-			if c.ws != nil {
-				h.register <- &c
-				go listen(c.ws)
-				go c.writer()
-				defer func() { h.unregister <- &c }()
+	npeers := len(h.connections)
+	fmt.Println("currently connected to ", npeers, "peers.")
+	conn := make(chan *connection)
+	if npeers == 0 && permission == DIRECTOR {
+		myself := Peer{ipaddr: msg, diraddr: msg, nodeId: 0, permission: DIRECTOR}
+		fmt.Println("inviting peers to join...")
+		for _, addr := range knownAddrs {
+			if addr != myself.ipaddr {
+				go invitePeer(addr, conn)
+				go registerAndListen(conn)
 			}
 		}
-		num := len(connections)
-		fmt.Println("est. ", num, "connections")
 	}
-
-	//now wait for new instructions from js-client
+	//listen for new messages from browser client
 	listen(ws)
 }
 
-func invitePeers() []connection {
-	connections := []connection{}
-	for _, addr := range knownAddrs {
-		if addr == myself.ipaddr {
-			// fmt.Println(addr, " is me!")
-			continue
-		}
-		fmt.Println("inviting ", addr, "....")
-		//send invite and wait for accept response, then establish socket connection
-		//assume invitee has socket server listening on port 3000
-		tcpAddr, err := net.ResolveTCPAddr("tcp", addr+":3000")
-		if err != nil {
-			fmt.Println("ResolveTCPAddr error", err.Error())
-			log.Fatal(err)
-		}
-		conn, err := net.DialTCP("tcp", nil, tcpAddr)
-		if err != nil {
-			fmt.Println("DialTCP error", err.Error())
-			log.Fatal(err)
-		}
-		fmt.Println("got connection for peer @", addr)
-		c := handshake(addr, conn)
-		connections = append(connections, c)
-	}
-	return connections
-}
-
-//set up the initial connection between this node and the peer
-func handshake(dest string, conn *net.TCPConn) connection {
-	fmt.Println("trying handshake....")
-
-	origin := myself.ipaddr
-
-	if dest == origin {
-		c := connection{send: make(chan []byte, 256), ws: nil}
-		return c
-	}
-
-	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
-
-	//try and contact the peer
-	ws, err := websocket.Dial("ws://"+dest+":3000/ws", "", "http://"+origin)
+func invitePeer(addr string, conn chan *connection) {
+	fmt.Println("trying to invite peer @ ", addr)
+	origin := "http://" + myself.ipaddr
+	dest := "ws://" + addr + ":3000/ws"
+	fmt.Println("dialing...")
+	ws, err := websocket.Dial(dest, "", origin)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	//send the peer its public ip address
-	if _, err := ws.Write([]byte(dest)); err != nil {
-		log.Fatal(err)
-	}
-	var ack1 = make([]byte, 512)
-	var n1 int
-	if n1, err = ws.Read(ack1); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Received %s.\n", ack1[:n1])
-
-	//send the peer my public ip address
-	if _, err := ws.Write([]byte(origin)); err != nil {
-		log.Fatal(err)
-	}
-	var ack2 = make([]byte, 512)
-	var n2 int
-	if n2, err = ws.Read(ack2); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Received %s.\n", ack2[:n2])
-
-	//TODO send the peer their permission lvl?
-	//TODO send all of this in a single msg?
-	// or ping --> ACK --> send info --> ACK
-
-	c := connection{send: make(chan []byte, 256), ws: ws}
-	return c
+	fmt.Println("success!")
+	conn <- &connection{send: make(chan []byte, 256), ws: ws}
 }
+
+func registerAndListen(conn chan *connection) {
+	fmt.Println("registerAndListening....")
+	c := <-conn
+	addr := c.ws.RemoteAddr()
+	fmt.Println("connected to ", addr)
+	h.register <- c
+	go listen(c.ws)
+	go c.writer()
+	// defer func() { h.unregister <- c }()
+}
+
+// func invitePeers() []connection {
+// 	connections := []connection{}
+// 	for _, addr := range knownAddrs {
+// 		if addr == myself.ipaddr {
+// 			// fmt.Println(addr, " is me!")
+// 			continue
+// 		}
+// 		fmt.Println("inviting ", addr, "....")
+// 		//send invite and wait for accept response, then establish socket connection
+// 		//assume invitee has socket server listening on port 3000
+// 		tcpAddr, err := net.ResolveTCPAddr("tcp", addr+":3000")
+// 		if err != nil {
+// 			fmt.Println("ResolveTCPAddr error", err.Error())
+// 			log.Fatal(err)
+// 		}
+// 		conn, err := net.DialTCP("tcp", nil, tcpAddr)
+// 		if err != nil {
+// 			fmt.Println("DialTCP error", err.Error())
+// 			log.Fatal(err)
+// 		}
+// 		fmt.Println("got connection for peer @", addr)
+// 		c := handshake(addr, conn)
+// 		connections = append(connections, c)
+// 	}
+// 	return connections
+// }
+
+// //set up the initial connection between this node and the peer
+// func handshake(dest string, conn *net.TCPConn) connection {
+// 	fmt.Println("trying handshake....")
+
+// 	origin := myself.ipaddr
+
+// 	if dest == origin {
+// 		c := connection{send: make(chan []byte, 256), ws: nil}
+// 		return c
+// 	}
+
+// 	fmt.Println("want to dial remote addr:", dest, " from origin:", origin)
+
+// 	//try and contact the peer
+// 	ws, err := websocket.Dial("ws://"+dest+":3000/ws", "", "http://"+origin)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	//send the peer its public ip address
+// 	if _, err := ws.Write([]byte(dest)); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	var ack1 = make([]byte, 512)
+// 	var n1 int
+// 	if n1, err = ws.Read(ack1); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("Received %s.\n", ack1[:n1])
+
+// 	//send the peer my public ip address
+// 	if _, err := ws.Write([]byte(origin)); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	var ack2 = make([]byte, 512)
+// 	var n2 int
+// 	if n2, err = ws.Read(ack2); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("Received %s.\n", ack2[:n2])
+
+// 	//TODO send the peer their permission lvl?
+// 	//TODO send all of this in a single msg?
+// 	// or ping --> ACK --> send info --> ACK
+
+// 	c := connection{send: make(chan []byte, 256), ws: ws}
+// 	return c
+// }
 
 func listen(ws *websocket.Conn) {
 	//now wait for new messages
+	fmt.Println("listening for new messages...")
 	for {
 		var m string
 		err := websocket.Message.Receive(ws, &m)
 		if err != nil {
+			fmt.Println("got err!", err.Error())
 			break
 		}
 		fmt.Println("got new message: ", m)
 		h.broadcast <- []byte(m)
 	}
+	fmt.Println("done listening.")
 }
 
 func (h *hub) run() {
