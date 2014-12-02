@@ -47,7 +47,7 @@ var (
 	peers        = []Peer{}
 	knownAddrs   = []string{"54.149.39.226", "24.128.54.88"}
 	myself       Peer
-	permission   = DIRECTOR
+	permission   = EDITOR
 	numConnected = 0
 )
 
