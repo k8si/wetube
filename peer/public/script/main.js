@@ -46,7 +46,8 @@ $(function() {
 		}
 		ws.onmessage = function(event) {
 			if (status == statvals['CONN']) {
-				console.log('connected. onmessage: ' + event.data);				
+				console.log('connected. onmessage: ' + event.data.toString());
+				//TODO event.data will be a Blob				
 			} else {
 				console.log('onmessage: event.data = ' + event.data);
 				if (event.data == datavals['SUCC']) {
