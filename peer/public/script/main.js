@@ -20,7 +20,7 @@ $(function() {
 		}
 		service = ipaddr;
 		// var sockurl = 'ws://'+ipaddr+':3000/ws';
-		var sockurl = 'ws://localhost:3000/jscli';
+		var sockurl = 'ws://localhost:4000/jscli';
 		// var sockurl = 'ws://'+ipaddr+':3000/jscli';
 		console.log('trying to connect to: ' + sockurl);
 		ws = new WebSocket(sockurl);

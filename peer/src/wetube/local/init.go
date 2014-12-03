@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"golang.org/x/net/websocket"
 	"log"
-	// "net"
+	"net"
 	"net/http"
 	// "os"
 	// "strconv"
@@ -28,7 +28,7 @@ type hub struct {
 }
 
 type connection struct {
-	ws   *websocket.Conn
+	ws   *net.TCPConn
 	send chan []byte
 }
 
@@ -40,9 +40,11 @@ var h = hub{
 }
 
 const (
-	DIRECTOR = 0
-	EDITOR   = 1
-	VIEWER   = 2
+	DIRECTOR       = 0
+	EDITOR         = 1
+	VIEWER         = 2
+	TCP_PORT       = "3000"
+	WEBSOCKET_PORT = "4000"
 )
 
 type Peer struct {
@@ -60,30 +62,39 @@ var (
 	numConnected = 0
 )
 
-func main() {
-	//for now, get permission of cmdline
-	// args := os.Args
-	// if len(args) < 2 {
-	// 	os.Exit(1)
-	// }
-	// p, _ := strconv.ParseInt(args[1], 10, 32)
-	// permission = rune(p)
-	// fmt.Println("starting node with permission: ", permission)
-	service := ":3000"
-	fmt.Println("listening on ", service)
-	go h.run()
-	// http.Handle("/websocket/", websocket.Handler(initBrowser2ClientSocket))
-	// http.Handle("/ws", websocket.Handler(initBrowser2ClientSocket))
+func handleGUI() {
+	wsocks := ":" + WEBSOCKET_PORT
+	fmt.Println("websockets listening on ", wsocks)
 	http.Handle("/jscli", websocket.Handler(initBrowser2ClientSocket))
-	http.HandleFunc("/invite", inviteHandler)
-	err := http.ListenAndServe(service, nil)
+	err := http.ListenAndServe(wsocks, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
+func handleTCP() {
+	tcps := ":" + TCP_PORT
+	fmt.Println("goclient listening on ", tcps)
+	ln, err := net.Listen("tcp", tcps)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(conn)
+	}
+}
+
+func main() {
+	handleGUI()
+	handleTCP()
+}
+
 func inviteHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("rcv'd invite to connection from ", req.RemoteAddr())
+	fmt.Println("rcv'd invite to connection from ")
 }
 
 func initBrowser2ClientSocket(ws *websocket.Conn) {
@@ -110,21 +121,22 @@ func initBrowser2ClientSocket(ws *websocket.Conn) {
 	// 	}
 	// }
 	//listen for new messages from browser client
-	listen(ws)
+	// listen(ws)
 }
 
-func invitePeer(addr string, conn chan *connection) {
-	fmt.Println("trying to invite peer @ ", addr)
-	origin := "http://" + myself.ipaddr
-	dest := "ws://" + addr + ":3000/invite"
-	fmt.Println("dialing...")
-	ws, err := websocket.Dial(dest, "", origin)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("success!")
-	conn <- &connection{send: make(chan []byte, 256), ws: ws}
-}
+// func invitePeer(addr string, conn chan *connection) {
+// 	fmt.Println("trying to invite peer @ ", addr)
+// 	origin := "http://" + myself.ipaddr
+// 	// dest, err := net.ResolveTCPAddr("tcp", addr+":3000")
+// 	// // dest := "ws://" + addr + ":3000/invite"
+// 	// // fmt.Println("dialing...")
+// 	// // ws, err := websocket.Dial(dest, "", origin)
+// 	// if err != nil {
+// 	// 	log.Fatal(err)
+// 	// }
+// 	// fmt.Println("success!")
+// 	// conn <- &connection{send: make(chan []byte, 256), ws: ws}
+// }
 
 func registerAndListen(conn chan *connection) {
 	fmt.Println("registerAndListening....")
@@ -132,7 +144,7 @@ func registerAndListen(conn chan *connection) {
 	addr := c.ws.RemoteAddr()
 	fmt.Println("connected to ", addr)
 	h.register <- c
-	go listen(c.ws)
+	// go listen(c.ws)
 	go c.writer()
 	// defer func() { h.unregister <- c }()
 }
@@ -143,7 +155,7 @@ func respondToInvitation(ws *websocket.Conn) {
 		log.Fatal(err)
 	}
 	conn := make(chan *connection)
-	conn <- &connection{send: make(chan []byte, 256), ws: ws}
+	// conn <- &connection{send: make(chan []byte, 256), ws: ws}
 	registerAndListen(conn)
 	fmt.Println("done.")
 }
