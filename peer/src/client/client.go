@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	// "net/http"
+	"net/http"
+	// "net/url"
 	"os"
 	"strconv"
 )
@@ -18,7 +19,7 @@ const (
 )
 
 var (
-	knownAddrs = []string{"54.149.39.226", "174.62.219.8"}
+	knownAddrs = []string{"54.149.51.58", "174.62.219.8"} //"54.149.39.226",
 	myipaddr   string
 	permission rune
 )
@@ -41,36 +42,69 @@ func main() {
 			if addr == myipaddr {
 				continue
 			}
-			conn := make(chan *connection)
-			go invite(addr, conn)
+			// conn := make(chan *connection)
+			// go invite(addr, conn)
+			go invite(addr)
 		}
+	}
+	for c, _ := range h.connections {
+		go c.writer()
+		go c.reader()
+		// defer func() { h.unregister <- c }()
 	}
 
 	service := ":" + TCP_PORT
 	fmt.Println("client listening on ", TCP_PORT)
-	l, err := net.Listen("tcp", service)
+	http.HandleFunc("/jsclient", connectToBrowser)
+	http.HandleFunc("/invite", handleInvite)
+	err := http.ListenAndServe(service, nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
-	defer l.Close()
-	fmt.Println("listening on port ", TCP_PORT)
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("got request")
-		go handleRequest(conn)
-	}
+	// l, err := net.Listen("tcp", service)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer l.Close()
+	// fmt.Println("listening on port ", TCP_PORT)
+	// for {
+	// 	conn, err := l.Accept()
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	go handleRequest(conn)
+	// }
 }
 
-func invite(addr string, conn chan *connection) {
+// func invite(addr string, conn chan *connection) {
+func invite(addr string) {
 	fmt.Println("trying to invite peer @ ", addr)
+	req := "http://" + addr + ":3000/invite?perm=1"
+	res, err := http.Get(req)
+	if err != nil {
+		//TODO wait for awhile then retry
+		panic(err.Error())
+	}
+	if res.StatusCode != 200 {
+		panic("bad status code: " + string(res.StatusCode))
+	}
+
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr+":"+TCP_PORT)
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Println("tcpaddr: ", tcpAddr)
+	fmt.Println("tcpaddr ", tcpAddr, "resolved.")
+	tcpConn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("connection established.")
+	s := make(chan []byte)
+	c := &connection{socket: tcpConn, send: s}
+	h.register <- c
+	// inviteMsg := "hello?"
+	// tcpConn.Write([]byte(inviteMsg))
+	// tcpConn.Close()
 
 }
 
@@ -86,6 +120,22 @@ func handleRequest(conn net.Conn) {
 	conn.Close()
 }
 
+func handleInvite(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("rcv'd invite req: ", r)
+}
+
+//TODO need to do something with the msg's
+func connectToBrowser(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("rcv'd jsclient req: ", r)
+	q := r.URL.Query()
+	fmt.Println("msg = ", q["msg"])
+	s := q["msg"][0]
+	fmt.Println("want to broadcast: ", s)
+	b := []byte(s)
+	// ms := []byte(m)
+	h.broadcast <- b
+}
+
 type hub struct {
 	connections map[*connection]bool
 	broadcast   chan []byte
@@ -94,8 +144,8 @@ type hub struct {
 }
 
 type connection struct {
-	ws   *net.TCPConn
-	send chan []byte
+	socket *net.TCPConn
+	send   chan []byte
 }
 
 var h = hub{
@@ -136,10 +186,23 @@ func (c *connection) writer() {
 	fmt.Println("c.writer()...")
 	for message := range c.send {
 		fmt.Println("writing message: ", string(message))
-		_, err := c.ws.Write(message)
+		_, err := c.socket.Write(message)
 		if err != nil {
 			break
 		}
 	}
-	c.ws.Close()
+	c.socket.Close()
+}
+
+func (c *connection) reader() {
+	for {
+		msg := make([]byte, 1024)
+		_, err := c.socket.Read(msg)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("got msg: ", string(msg))
+		h.broadcast <- msg
+	}
+	c.socket.Close()
 }
