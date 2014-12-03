@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/net/websocket"
 	"log"
-	"net"
+	// "net"
 	"net/http"
 )
 
@@ -60,26 +60,37 @@ func listen(ws *websocket.Conn) {
 
 func sendToClient(msg string) string {
 	fmt.Println("relaying message: ", msg)
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:"+TCP_PORT)
+	req := "http://localhost:3000/jsclient?msg=" + msg
+	res, err := http.Get(req)
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
-	conn, err := net.DialTCP("tcp", nil, addr)
-	if err != nil {
-		log.Fatal(err)
+	fmt.Println(res)
+	if res.StatusCode != 200 {
+		panic("bad status code: " + string(res.StatusCode))
 	}
-	conn.Write([]byte(msg))
-	response := make([]byte, 1024)
-	_, err = conn.Read(response)
-	if err != nil {
-		log.Fatal(err)
-	}
-	m := string(response)
-	fmt.Println("got response: ", m)
-	conn.Close()
-	// if m != ACK {
-	// log.Fatal("error in sendToClient for msg: ", msg)
+	return "1"
+
+	// addr, err := net.ResolveTCPAddr("tcp", "localhost:"+TCP_PORT)
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
-	fmt.Println("success.\n")
-	return m
+	// conn, err := net.DialTCP("tcp", nil, addr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// conn.Write([]byte(msg))
+	// response := make([]byte, 1024)
+	// _, err = conn.Read(response)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// m := string(response)
+	// fmt.Println("got response: ", m)
+	// conn.Close()
+	// // if m != ACK {
+	// // log.Fatal("error in sendToClient for msg: ", msg)
+	// // }
+	// fmt.Println("success.\n")
+	// return m
 }
