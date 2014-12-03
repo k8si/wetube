@@ -19,8 +19,10 @@ $(function() {
 			return;
 		}
 		service = ipaddr;
-		if (ws != null) ws.close();
-		var sockurl = 'ws://'+ipaddr+':3000/ws'
+		// var sockurl = 'ws://'+ipaddr+':3000/ws';
+		var sockurl = 'ws://localhost:3000/jscli';
+		// var sockurl = 'ws://'+ipaddr+':3000/jscli';
+		console.log('trying to connect to: ' + sockurl);
 		ws = new WebSocket(sockurl);
 		if (ws == null) {
 			console.log('socket creation failed');
@@ -48,9 +50,9 @@ $(function() {
 			} else {
 				console.log('onmessage: event.data = ' + event.data);
 				if (event.data == datavals['SUCC']) {
-					console.log('connected.')
+					console.log('connected.');
 					status = statvals['CONN'];
-					setStatus('connected.');
+					setStatus('connected.');					
 				} else {
 					status = statvals['DIS'];
 					setStatus('disconnected: ' + event.data);
@@ -77,8 +79,7 @@ $(function() {
 	}
 
 	function sendMessage(msg) {
-		console.log('trying to send message: ' + msg);
-		if ((ws != null)) { //&& (status == statvals['CONN'])){
+		if (ws != null) { //&& (status == statvals['CONN'])){
 			ws.send(msg);
 			// console.log('status = ' + status + '; sent msg.');
 		} else {
