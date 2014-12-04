@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"net"
 	// "newmarch"
-	"net/http/httputil"
+	// "net/http/httputil"
 	"os"
 	"time"
 )
@@ -21,18 +21,12 @@ const (
 )
 
 var (
-	knownAddrs = []string{"54.149.51.58", "174.62.219.8"} //"54.149.39.226",
+	//"54.149.39.226", "54.149.51.58", "174.62.219.8"
+	knownAddrs = []string{"54.149.39.226", "174.62.219.8"}
 	myipaddr   string
 	permission rune
 	initialize = false
 )
-
-type hub struct {
-	connections map[*connection]bool
-	broadcast   chan []byte
-	register    chan *connection
-	unregister  chan *connection
-}
 
 var h = hub{
 	broadcast:   make(chan []byte),
@@ -41,75 +35,17 @@ var h = hub{
 	connections: make(map[*connection]bool),
 }
 
-type connection struct {
-	// socket *net.TCPConn
-	socket *httputil.ClientConn
-	send   chan []byte
-}
-
-func (h *hub) run() {
-	for {
-		select {
-		case c := <-h.register:
-			fmt.Println("registering new connection.")
-			h.connections[c] = true
-		case c := <-h.unregister:
-			fmt.Println("unregistering connection")
-			if _, ok := h.connections[c]; ok {
-				delete(h.connections, c)
-				close(c.send)
-			}
-		case m := <-h.broadcast:
-			npeers := len(h.connections)
-			fmt.Println("rcvd broadcast.")
-			for c := range h.connections {
-				select {
-				case c.send <- m:
-				default:
-					delete(h.connections, c)
-					close(c.send)
-				}
-			}
-		}
-	}
-}
-
-func (c *connection) writer() {
-	// fmt.Println("starting writer() for ", c.socket.RemoteAddr())
-	// for message := range c.send {
-	// 	fmt.Println("writing message: ", string(message))
-	// 	_, err := c.socket.Write(message)
-	// 	if err != nil {
-	// 		break
-	// 	}
-	// }
-	// c.socket.Close()
-	// fmt.Println("closed writer() for ", c.socket.RemoteAddr())
-}
-
-func (c *connection) reader() {
-	// fmt.Println("starting reader() for ", c.socket.RemoteAddr())
-	// for {
-	// 	msg := make([]byte, 1024)
-	// 	_, err := c.socket.Read(msg)
-	// 	if err != nil {
-	// 		panic(err.Error())
-	// 	}
-	// 	fmt.Println("got msg: ", string(msg))
-	// 	h.broadcast <- msg
-	// }
-	// c.socket.Close()
-	// fmt.Println("closed reader() for ", c.socket.RemoteAddr())
-}
-
 func main() {
 	// newmarch.GenRSAKeys()
 	// newmarch.GenX509Cert()
 	//specify initialization with cmdline arg
 	args := os.Args
+	fmt.Println("args: ", args)
 	if len(args) == 2 {
+		fmt.Println("normal peer")
 		myipaddr = args[1]
 	} else if len(args) == 3 {
+		fmt.Println("got initialize, peer = DIR")
 		myipaddr = args[1]
 		initialize = true
 		permission = 0
@@ -132,19 +68,8 @@ func main() {
 	defer listener.Close()
 
 	if initialize {
-		for _, addr := range knownAddrs {
-			if addr == myipaddr {
-				continue
-			}
-			c := make(chan net.Conn)
-			go invite(addr, c)
-			cf := &tls.Config{Rand: rand.Reader}
-			ssl := tls.Client(<-c, cf)
-			s := make(chan []byte)
-			thing := httputil.NewClientConn(ssl, nil)
-			conn := &connection{socket: thing, send: s}
-			h.register <- conn
-		}
+		fmt.Println("inviting peers...")
+		invitePeers()
 	}
 
 	for {
@@ -165,35 +90,4 @@ func checkError(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
-}
-
-func invite(addr string, c chan net.Conn) {
-	fmt.Println("inviting peer @ ", addr)
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr+":"+TCP_PORT)
-	if err != nil {
-		panic(err.Error())
-	}
-	fmt.Println("tcpaddr ", tcpAddr, "resolved.")
-	tcpConn := tryInvite(tcpAddr)
-	if tcpConn == nil {
-		for {
-			fmt.Println("retrying...")
-			tcpConn := tryInvite(tcpAddr)
-			if tcpConn != nil {
-				break
-			}
-			waitFor := 10
-			time.Sleep(time.Duration(waitFor) * time.Second)
-			continue
-		}
-	}
-	c <- tcpConn
-}
-
-func tryInvite(tcpAddr *net.TCPAddr) *net.TCPConn {
-	tcpConn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err != nil {
-		return nil
-	}
-	return tcpConn
 }
