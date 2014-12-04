@@ -21,8 +21,7 @@ const (
 )
 
 var (
-	//"54.149.39.226", "54.149.51.58", "174.62.219.8"
-	knownAddrs = []string{"54.149.39.226", "174.62.219.8"}
+	knownAddrs = []string{"128.119.243.175", "54.149.118.210", "128.119.40.193"}
 	myipaddr   string
 	permission rune
 	initialize = false
@@ -36,8 +35,6 @@ var h = hub{
 }
 
 func main() {
-	// newmarch.GenRSAKeys()
-	// newmarch.GenX509Cert()
 	//specify initialization with cmdline arg
 	args := os.Args
 	fmt.Println("args: ", args)
@@ -78,12 +75,19 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-		go func(c net.Conn) {
-			fmt.Println("got message.")
-			io.Copy(c, c)
-			c.Close()
-		}(conn)
+		go handleConnection(conn)
 	}
+}
+
+func handleConnection(conn *net.Conn) {
+	fmt.Println("got connection")
+	response := "hello"
+	conn.Write([]byte(response))
+	conn.Close()
+}
+
+func onInviteReceived() {
+
 }
 
 func checkError(err error) {
