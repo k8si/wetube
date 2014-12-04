@@ -25,6 +25,8 @@ func invitePeers() {
 		conn := &connection{socket: ssl, send: s}
 		conn.socket.Write([]byte("welcome"))
 		h.register <- conn
+		go conn.writer()
+		go conn.reader()
 	}
 }
 

@@ -97,8 +97,8 @@ func handleConnection(conn net.Conn) {
 	msg := "ACK"
 	go newconn.writer()
 	go newconn.reader()
-	h.broadcast <- []byte(msg)
-	// newconn.send <- []byte(msg)
+	// h.broadcast <- []byte(msg)
+	newconn.send <- []byte(msg)
 
 }
 
