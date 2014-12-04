@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"net"
 	// "newmarch"
-	"net/http/httputil"
+	// "net/http/httputil"
 	"os"
 	"time"
 )
@@ -90,8 +90,10 @@ func handleConnection(conn net.Conn) {
 	cf := &tls.Config{Rand: rand.Reader}
 	ssl := tls.Client(conn, cf)
 	s := make(chan []byte, 256)
-	thing := httputil.NewClientConn(ssl, nil)
-	newconn := &connection{socket: thing, send: s}
+	// thing := httputil.NewClientConn(ssl, nil)
+	// newconn := &connection{socket: thing, send: s}
+	newconn := &connection{socket: ssl, send: s}
+	h.register <- newconn
 	msg := "ACK"
 	go newconn.writer()
 	go newconn.reader()

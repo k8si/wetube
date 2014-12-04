@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http/httputil"
+	// "net/http/httputil"
 	"time"
 )
 
@@ -20,8 +20,10 @@ func invitePeers() {
 		cf := &tls.Config{Rand: rand.Reader}
 		ssl := tls.Client(<-c, cf)
 		s := make(chan []byte)
-		thing := httputil.NewClientConn(ssl, nil)
-		conn := &connection{socket: thing, send: s}
+		// thing := httputil.NewClientConn(ssl, nil)
+		// conn := &connection{socket: thing, send: s}
+		conn := &connection{socket: ssl, send: s}
+		conn.socket.Write([]byte("welcome"))
 		h.register <- conn
 	}
 }

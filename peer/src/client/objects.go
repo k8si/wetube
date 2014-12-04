@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
-	"net/http/httputil"
+	// "net/http"
+	// "net"
+	// "net/http/httputil"
 )
 
 type hub struct {
@@ -14,8 +17,10 @@ type hub struct {
 
 type connection struct {
 	// socket *net.TCPConn
-	socket *httputil.ClientConn
-	send   chan []byte
+	// socket *httputil.ClientConn
+	socket *tls.Conn
+	// socket *net.Conn
+	send chan []byte
 }
 
 func (h *hub) run() {
@@ -46,29 +51,29 @@ func (h *hub) run() {
 }
 
 func (c *connection) writer() {
-	// fmt.Println("starting writer() for ", c.socket.RemoteAddr())
-	// for message := range c.send {
-	// 	fmt.Println("writing message: ", string(message))
-	// 	_, err := c.socket.Write(message)
-	// 	if err != nil {
-	// 		break
-	// 	}
-	// }
-	// c.socket.Close()
-	// fmt.Println("closed writer() for ", c.socket.RemoteAddr())
+	fmt.Println("starting writer() for ", c.socket.RemoteAddr())
+	for message := range c.send {
+		fmt.Println("writing message: ", string(message))
+		_, err := c.socket.Write(message)
+		if err != nil {
+			break
+		}
+	}
+	c.socket.Close()
+	fmt.Println("closed writer() for ", c.socket.RemoteAddr())
 }
 
 func (c *connection) reader() {
-	// fmt.Println("starting reader() for ", c.socket.RemoteAddr())
-	// for {
-	// 	msg := make([]byte, 1024)
-	// 	_, err := c.socket.Read(msg)
-	// 	if err != nil {
-	// 		panic(err.Error())
-	// 	}
-	// 	fmt.Println("got msg: ", string(msg))
-	// 	h.broadcast <- msg
-	// }
-	// c.socket.Close()
-	// fmt.Println("closed reader() for ", c.socket.RemoteAddr())
+	fmt.Println("starting reader() for ", c.socket.RemoteAddr())
+	for {
+		msg := make([]byte, 1024)
+		_, err := c.socket.Read(msg)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("got msg: ", string(msg))
+		h.broadcast <- msg
+	}
+	c.socket.Close()
+	fmt.Println("closed reader() for ", c.socket.RemoteAddr())
 }
