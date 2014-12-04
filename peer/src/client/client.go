@@ -7,7 +7,8 @@ import (
 	"net/http"
 	// "net/url"
 	"os"
-	"strconv"
+	// "strconv"
+	// "time"
 )
 
 const (
@@ -22,28 +23,31 @@ var (
 	knownAddrs = []string{"54.149.51.58", "174.62.219.8"} //"54.149.39.226",
 	myipaddr   string
 	permission rune
+	initialize = false
 )
 
 // func RunClient() {
 func main() {
-	//for now set permission via cmdline arg
+	//specify initialization with cmdline arg
 	args := os.Args
-	if len(args) < 3 {
-		panic("not enough args")
+	if len(args) == 2 {
+		myipaddr = args[1]
+	} else if len(args) == 3 {
+		myipaddr = args[1]
+		initialize = true
+		permission = 0
+	} else {
+		panic("not enough args. usage: go client.go ip-addr [init]")
 	}
-	p, _ := strconv.ParseInt(args[1], 10, 32)
-	permission = rune(p)
-	myipaddr = args[2]
+
 	fmt.Println("starting client. permission lvl=", permission, "; ipaddr=", myipaddr)
 	go h.run()
-	if permission == DIRECTOR {
-		//initialization; need to invite peers
+	//invite some peers to get the stew going
+	if initialize {
 		for _, addr := range knownAddrs {
 			if addr == myipaddr {
 				continue
 			}
-			// conn := make(chan *connection)
-			// go invite(addr, conn)
 			go invite(addr)
 		}
 	}
@@ -55,25 +59,17 @@ func main() {
 
 	service := ":" + TCP_PORT
 	fmt.Println("client listening on ", TCP_PORT)
-	http.HandleFunc("/jsclient", connectToBrowser)
-	http.HandleFunc("/invite", handleInvite)
-	err := http.ListenAndServe(service, nil)
+	//doing this via http because i'm lazy / the routes are convenient
+	http.HandleFunc("/jsclient", connectToBrowser) //handle incoming messages from js-client
+	http.HandleFunc("/invite", handleInvite)       //handle invitations to connect
+	s := &http.Server{
+		Addr: service,
+	}
+	// err := http.ListenAndServe(service, nil)
+	err := s.ListenAndServe()
 	if err != nil {
 		panic(err.Error())
 	}
-	// l, err := net.Listen("tcp", service)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer l.Close()
-	// fmt.Println("listening on port ", TCP_PORT)
-	// for {
-	// 	conn, err := l.Accept()
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	go handleRequest(conn)
-	// }
 }
 
 // func invite(addr string, conn chan *connection) {
