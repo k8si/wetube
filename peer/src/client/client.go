@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
+	// "io"
 	// "log"
 	"crypto/rand"
 	"crypto/tls"
@@ -79,7 +79,7 @@ func main() {
 	}
 }
 
-func handleConnection(conn *net.Conn) {
+func handleConnection(conn net.Conn) {
 	fmt.Println("got connection")
 	response := "hello"
 	conn.Write([]byte(response))
