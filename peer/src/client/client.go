@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"net"
 	// "newmarch"
-	// "net/http/httputil"
+	"net/http/httputil"
 	"os"
 	"time"
 )
@@ -81,9 +81,17 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 	fmt.Println("got connection")
-	response := "hello"
-	conn.Write([]byte(response))
-	conn.Close()
+	// c := make(chan net.Conn)
+	cf := &tls.Config{Rand: rand.Reader}
+	ssl := tls.Client(conn, cf)
+	s := make(chan []byte)
+	thing := httputil.NewClientConn(ssl, nil)
+	newconn := &connection{socket: thing, send: s}
+	msg := "ACK"
+	go newconn.writer()
+	go newconn.reader()
+	newconn.send <- []byte(msg)
+
 }
 
 func onInviteReceived() {
