@@ -51,11 +51,11 @@ func main() {
 			go invite(addr)
 		}
 	}
-	for c, _ := range h.connections {
-		go c.writer()
-		go c.reader()
-		// defer func() { h.unregister <- c }()
-	}
+	// for c, _ := range h.connections {
+	// 	go c.writer()
+	// 	go c.reader()
+	// 	// defer func() { h.unregister <- c }()
+	// }
 
 	service := ":" + TCP_PORT
 	fmt.Println("client listening on ", TCP_PORT)
@@ -95,13 +95,12 @@ func invite(addr string) {
 		panic(err.Error())
 	}
 	fmt.Println("connection established.")
+	tcpConn.Write([]byte("welcome"))
 	s := make(chan []byte)
 	c := &connection{socket: tcpConn, send: s}
 	h.register <- c
-	// inviteMsg := "hello?"
-	// tcpConn.Write([]byte(inviteMsg))
-	// tcpConn.Close()
-
+	go c.reader()
+	go c.writer()
 }
 
 func handleRequest(conn net.Conn) {
@@ -118,6 +117,7 @@ func handleRequest(conn net.Conn) {
 
 func handleInvite(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("rcv'd invite req: ", r)
+
 }
 
 //TODO need to do something with the msg's
@@ -179,7 +179,7 @@ func (h *hub) run() {
 }
 
 func (c *connection) writer() {
-	fmt.Println("c.writer()...")
+	fmt.Println("starting writer() for ", c.socket.RemoteAddr())
 	for message := range c.send {
 		fmt.Println("writing message: ", string(message))
 		_, err := c.socket.Write(message)
@@ -188,9 +188,12 @@ func (c *connection) writer() {
 		}
 	}
 	c.socket.Close()
+	fmt.Println("closed writer() for ", c.socket.RemoteAddr())
+
 }
 
 func (c *connection) reader() {
+	fmt.Println("starting reader() for ", c.socket.RemoteAddr())
 	for {
 		msg := make([]byte, 1024)
 		_, err := c.socket.Read(msg)
@@ -201,4 +204,6 @@ func (c *connection) reader() {
 		h.broadcast <- msg
 	}
 	c.socket.Close()
+	fmt.Println("closed reader() for ", c.socket.RemoteAddr())
+
 }
