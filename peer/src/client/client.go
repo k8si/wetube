@@ -81,16 +81,22 @@ func main() {
 
 func handleConnection(conn net.Conn) {
 	fmt.Println("got connection")
+	req := make([]byte, 1024)
+	sent, err := conn.Read(req)
+	checkError(err)
+	fmt.Println("msg: ", sent)
+
 	// c := make(chan net.Conn)
 	cf := &tls.Config{Rand: rand.Reader}
 	ssl := tls.Client(conn, cf)
-	s := make(chan []byte)
+	s := make(chan []byte, 256)
 	thing := httputil.NewClientConn(ssl, nil)
 	newconn := &connection{socket: thing, send: s}
 	msg := "ACK"
 	go newconn.writer()
 	go newconn.reader()
-	newconn.send <- []byte(msg)
+	h.broadcast <- []byte(msg)
+	// newconn.send <- []byte(msg)
 
 }
 
