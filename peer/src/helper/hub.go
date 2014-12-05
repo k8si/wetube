@@ -28,15 +28,12 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case c := <-h.Register:
-			fmt.Println(c)
-			// newConn := <-c
-			// newAddr := newConn.socket.RemoteAddr().String()
-			// msg := []byte("NEWPEER:" + newAddr)
-			// for conn := range h.connections {
-			// 	thisAddr := conn.socket.RemoteAddr().String()
-			// 	fmt.Println("sending new addr ", newAddr, " to ", thisAddr)
-			// 	conn.send <- msg
-			// }
+			newAddr := c.Socket.RemoteAddr().String()
+			fmt.Println("registering new connection to ", newAddr)
+			msg := "NEWPEER:" + newAddr
+			for conn := range h.Connections {
+				conn.Send <- []byte(msg)
+			}
 			h.Connections[c] = true
 		case c := <-h.Unregister:
 			fmt.Println("unregistering connection")
