@@ -90,7 +90,12 @@ func (c *Connection) Reader() {
 		msg := make([]byte, 1024)
 		_, err := c.Socket.Read(msg)
 		checkError(err)
-		fmt.Println("got msg: ", string(msg))
+		msg = string(msg)
+		subject, contents := strings.Split(msg)
+		if subject == "NEWPEER" {
+			fmt.Println("need to register new peer: ", contents)
+		}
+		// fmt.Println("got msg: ", string(msg))
 		// h.broadcast <- msg
 	}
 	c.Socket.Close()
