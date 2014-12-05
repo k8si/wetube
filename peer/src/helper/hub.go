@@ -32,7 +32,12 @@ func (h *Hub) Run() {
 			fmt.Println("registering new connection to ", newAddr)
 			msg := "NEWPEER:" + newAddr
 			for conn := range h.Connections {
+				//tell the existing peer about the new one
 				conn.Send <- []byte(msg)
+				thisAddr := conn.Socket.RemoteAddr().String()
+				//tell the new peer about the existing one
+				msg = "NEWPEER:" + thisAddr
+				c.send <- []byte(msg)
 			}
 			h.Connections[c] = true
 		case c := <-h.Unregister:
