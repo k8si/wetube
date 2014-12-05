@@ -60,7 +60,7 @@ func listen(ws *websocket.Conn) {
 
 func sendToClient(msg string) string {
 	fmt.Println("relaying message: ", msg)
-	req := "http://localhost:3000/jsclient?msg=" + msg
+	req := "http://localhost:3001/jsclient?msg=" + msg
 	res, err := http.Get(req)
 	if err != nil {
 		panic(err.Error())
