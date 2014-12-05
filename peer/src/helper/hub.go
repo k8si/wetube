@@ -37,7 +37,7 @@ func (h *Hub) Run() {
 				thisAddr := conn.Socket.RemoteAddr().String()
 				//tell the new peer about the existing one
 				msg = "NEWPEER:" + thisAddr
-				c.send <- []byte(msg)
+				c.Send <- []byte(msg)
 			}
 			h.Connections[c] = true
 		case c := <-h.Unregister:
