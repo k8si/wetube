@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"crypto/rand"
 	"crypto/tls"
+	// "crypto/x509"
 	"fmt"
 	"helper"
 	"log"
@@ -46,13 +47,15 @@ var hub = &Hub{messages: make(map[string]chan<- Message)}
 func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
+
 	//configure TLS
-	cert, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
 	if err != nil {
 		log.Fatal(err)
 	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
 	config.Rand = rand.Reader
+
 	// listener, err := net.Listen("tcp", ":3000")
 	listener, err := tls.Listen("tcp", ":3000", &config)
 	if err != nil {
@@ -61,6 +64,22 @@ func main() {
 	self = listener.Addr().String()
 	log.Printf("listening on self=%s\n", self)
 	if *initialize {
+		// //TODO create cert pool?
+		// edlabCert, err := tls.LoadX509KeyPair("certs/edlab.pem", "certs/edlab.key")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// ec2Cert, err := tls.LoadX509KeyPair("certs/ec2.pem", "certs/ec2.key")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// homeCert, err := tls.LoadX509KeyPair("certs/home.pem", "certs/home.key")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
+		// dialConfig := tls.Config{Certificates: []tls.Certificate{edlabCert, ec2Cert, homeCert}}
+		// dialConfig.Rand = rand.Reader
 		knownAddrs := []string{helper.ELNUX2, helper.ME, helper.EC2}
 		for _, addr := range knownAddrs {
 			go dial(addr)
@@ -89,6 +108,10 @@ func main() {
 	log.Println("listening for jsclient on port 3001")
 }
 
+func makeCerts() {
+
+}
+
 func dial(addr string) {
 	if addr == self {
 		return //dont dial self
@@ -100,11 +123,11 @@ func dial(addr string) {
 	defer hub.Remove(addr)
 
 	//configure tls
-	cert, err := tls.LoadX509KeyPair("certs/client.pem", "certs/client.key")
+	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
 	if err != nil {
 		log.Fatal(err)
 	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}}
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
 	config.Rand = rand.Reader
 
 	//try to connect
@@ -165,7 +188,7 @@ func serve(c net.Conn) {
 		log.Printf("< %v received: %v", c.RemoteAddr(), m)
 		fmt.Println(m.Body)
 		broadcast(m)
-		go dial(m.Sender)
+		// go dial(m.Sender)
 	}
 	c.Close()
 	log.Println("<", c.RemoteAddr(), "close")
