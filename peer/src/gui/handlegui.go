@@ -16,8 +16,8 @@ const (
 
 // func RunGUI() {
 func main() {
-	service := ":" + WEBSOCKET_PORT
-	fmt.Println("listening on ", WEBSOCKET_PORT)
+	service := "localhost:" + WEBSOCKET_PORT
+	fmt.Println("gui listening on ", service)
 	http.Handle("/jscli", websocket.Handler(estConnection))
 	err := http.ListenAndServe(service, nil)
 	if err != nil {

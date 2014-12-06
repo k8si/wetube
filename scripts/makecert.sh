@@ -1,7 +1,7 @@
 #!/bin/bash
 # stolen from: https://gist.github.com/spikebike/2232102
 # usage: ./makecert.sh [email]
-dir=$WETUBE_ROOT/peer/src/client/certs
+dir=$WETUBE_ROOT/peer/src/peer/certs
 echo $dir
 mkdir $dir
 echo "make server cert"
