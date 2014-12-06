@@ -8,7 +8,7 @@ email=$1
 echo "gen rsa keys"
 ssh-keygen -t rsa -C $email -f $dir/id_rsa
 echo "gen x509 cert"
-openssl req -new -x509 -key id_rsa -out cacert.pem -days 1059 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=174.62.219.8/emailAddress=$email"
+openssl req -new -x509 -key $dir/id_rsa -out $dir/cacert.pem -days 1059 -subj "/C=DE/ST=NRW/L=Earth/O=Random Company/OU=IT/CN=174.62.219.8/emailAddress=$email"
 
 
 # dir=$WETUBE_ROOT/peer/src/peer/certs
