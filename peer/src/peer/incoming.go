@@ -8,7 +8,22 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+/* Message Log */
+var seenMessages = struct {
+	m map[string]bool
+	sync.Mutex
+}{m: make(map[string]bool)}
+
+func seen(id string) bool {
+	seenMessages.Lock()
+	ok := seenMessages.m[id]
+	seenMessages.m[id] = true
+	seenMessages.Unlock()
+	return ok
+}
 
 func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
@@ -109,12 +124,12 @@ func serve(c net.Conn) {
 
 		case "ack", "msg":
 			broadcast(m)
+			sendToGui(m.Body)
 			//TODO colleck ACKs, remove from hub if none from [addr] ?
 
 		default:
 
 		}
-
 		go dial(m.Sender, nil)
 	}
 	caddr := c.RemoteAddr()

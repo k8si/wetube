@@ -23,19 +23,21 @@ import (
 	"bufio"
 	"crypto/rand"
 	"crypto/tls"
+	"flag"
+	"fmt"
 	"helper"
 	"log"
-	// "net/http"
-	"flag"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"sync"
+	// "sync"
 )
 
 var (
-	initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
-	myAddr       = flag.String("ip", "", "your public ip address")       //TODO this is just "self"
+	// initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
+	myAddr       = flag.String("ip", "", "your public ip address") //TODO this is just "self"
+	interactive  = flag.Bool("i", false, "interactive mode")
 	permission   = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
 	self         string
 	directorAddr string
@@ -65,18 +67,21 @@ func main() {
 	}
 
 	self = *myAddr
-	if *permission == helper.DIRECTOR {
-		takeOffice()
-	}
 
 	log.Printf("listening on self=%s\n", self)
 
-	// if *initialize {
-	// 	knownAddrs := []string{helper.ELNUX2, helper.ME, helper.EC2, helper.ELNUX7}
-	// 	for _, addr := range knownAddrs {
-	// 		go dial(addr)
-	// 	}
-	// }
+	//TODO there are probably much better way(s)
+	if *permission == helper.DIRECTOR {
+		takeOffice()
+		done := make(chan []string)
+		go readInvitees(done)
+		<-done
+		// for _, a := range <-done {
+		// 	if a != "" {
+		// 		fmt.Println("invited ", a)
+		// 	}
+		// }
+	}
 
 	go func() {
 		for {
@@ -88,21 +93,96 @@ func main() {
 		}
 	}()
 
-	// http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
-	// 	msg := r.URL.Query()["msg"][0]
-	// 	log.Printf("got jsclient message: %s\n", msg)
-	// 	m := Message{Sender: self, Subject: "", Body: msg}
-	// 	broadcast(m)
-	// })
-	// err2 := http.ListenAndServe("localhost:3001", nil)
-	// if err2 != nil {
-	// 	panic("browserListener(): error")
-	// }
-
-	readInput()
+	if *interactive {
+		readInputStdin()
+	} else {
+		readInput()
+	}
 }
 
+func readInvitees(done chan []string) {
+	//map of {address: permission} read from "invitees.txt"
+	invited := make(map[string]chan int)
+	numpeers := 0
+	f, err := os.Open("invitees.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		parts := strings.Split(scanner.Text(), " ")
+		if len(parts) != 2 {
+			log.Fatal("bad line in invitees.txt")
+		}
+		addr := parts[0]
+		numpeers += 1
+		ch := make(chan int)
+		invited[addr] = ch
+		go invitePeer(addr, parts[1], ch)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	addrs := make([]string, numpeers)
+	for a, v := range invited {
+		if <-v == 0 {
+			addrs = append(addrs, a)
+		} else {
+			addrs = append(addrs, "")
+		}
+	}
+	done <- addrs
+
+}
+
+func invitePeer(addr string, perm string, done chan int) {
+	if addr == self {
+		done <- 0
+	}
+	fmt.Println("inviting ", addr)
+	check, err := strconv.Atoi(perm)
+	if err != nil || check > helper.VIEWER {
+		log.Fatal("bad permission in invitees.txt")
+	}
+	dialed := make(chan int)
+	go dial(addr, dialed)
+	if <-dialed == 0 {
+		newID := strconv.Itoa(nodeidreg.getNewID())
+		welcome := Message{ID: helper.RandomID(), Sender: self, Subject: "welcome", Body: self + "," + newID} //+ "," + perm}
+		broadcast(welcome)
+		done <- 0
+	}
+	done <- 1
+}
+
+func sendToGui(msg string) {
+	fmt.Println("sending ", msg, "to gui")
+	req := "http://localhost:4000/input?msg=" + msg
+	_, err := http.Get(req)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+/* relay messages to gui */
 func readInput() {
+	http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
+		msg := r.URL.Query()["msg"][0]
+		log.Printf("got jsclient message: %s\n", msg)
+		m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
+		if *permission < helper.VIEWER {
+			broadcast(m)
+		}
+	})
+	err2 := http.ListenAndServe("localhost:3001", nil)
+	if err2 != nil {
+		panic("browserListener(): error")
+	}
+}
+
+/* "interactive mode" */
+func readInputStdin() {
 	r := bufio.NewReader(os.Stdin)
 	for {
 		s, err := r.ReadString('\n')
@@ -120,7 +200,6 @@ func readInput() {
 			}
 			continue
 		}
-		// log.Println("readInput: got client message: subject=", parts[0], ", body=", parts[1])
 		m := Message{
 			ID:      helper.RandomID(),
 			Sender:  self,
@@ -130,44 +209,9 @@ func readInput() {
 		//only directors/editors can send new instructions
 		if *permission < helper.VIEWER {
 			broadcast(m)
-			if *permission == helper.DIRECTOR && m.Subject == "invite" {
-				done := make(chan int)
-				go dial(m.Body, done)
-				if <-done == 0 {
-					newID := nodeidreg.getNewID()
-					newIDstr := strconv.Itoa(newID)
-					welcome.Body = directorAddr + "," + newIDstr
-					broadcast(welcome)
-				}
-			}
 			seen(m.ID)
 		} else {
 			log.Println("readInput: you dont have permission.")
 		}
 	}
-}
-
-func broadcast(msg Message) {
-	// log.Println("broadcasting message from Sender", msg.Sender, ": ", msg.Subject, msg.Body)
-	for _, ch := range hub.List() {
-		select {
-		case ch <- msg:
-		default:
-			//okay to drop messages sometimes?
-		}
-	}
-}
-
-/* Message Log */
-var seenMessages = struct {
-	m map[string]bool
-	sync.Mutex
-}{m: make(map[string]bool)}
-
-func seen(id string) bool {
-	seenMessages.Lock()
-	ok := seenMessages.m[id]
-	seenMessages.m[id] = true
-	seenMessages.Unlock()
-	return ok
 }

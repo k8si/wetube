@@ -14,12 +14,24 @@ const (
 	ACK            = "1"
 )
 
+var browserConn *websocket.Conn
+
 // func RunGUI() {
 func main() {
 	service := "localhost:" + WEBSOCKET_PORT
 	fmt.Println("gui listening on ", service)
 	http.Handle("/jscli", websocket.Handler(estConnection))
+	http.HandleFunc("/input", handleInput)
 	err := http.ListenAndServe(service, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func handleInput(w http.ResponseWriter, r *http.Request) {
+	msg := r.URL.Query()["msg"][0]
+	log.Printf("got input message from goclient: %s\n", msg)
+	err := websocket.Message.Send(browserConn, []byte(msg))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,6 +39,7 @@ func main() {
 
 func estConnection(ws *websocket.Conn) {
 	fmt.Println("establishing connection with browser....")
+	browserConn = ws
 	var msg string
 	err := websocket.Message.Receive(ws, &msg)
 	if err != nil {
@@ -37,12 +50,13 @@ func estConnection(ws *websocket.Conn) {
 	websocket.Message.Send(ws, "1")
 	//send the message to the client
 	sendToClient(msg)
+	//listen for new messages from GUI
 	listen(ws)
 }
 
 func listen(ws *websocket.Conn) {
 	//now wait for new messages
-	fmt.Println("listening for new messages...")
+	fmt.Println("listening for new messages from jsclient...")
 	for {
 		var m string
 		err := websocket.Message.Receive(ws, &m)
@@ -54,6 +68,7 @@ func listen(ws *websocket.Conn) {
 		res := sendToClient(m)
 		//TODO need to relay response back to browser where appropriate
 		err = websocket.Message.Send(ws, []byte(res))
+
 	}
 	fmt.Println("done listening.")
 }

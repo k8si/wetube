@@ -10,6 +10,16 @@ import (
 	"strings"
 )
 
+func broadcast(msg Message) {
+	for _, ch := range hub.List() {
+		select {
+		case ch <- msg:
+		default:
+			//okay to drop messages sometimes?
+		}
+	}
+}
+
 func dial(addr string, done chan int) {
 	if addr == self {
 		return //dont dial self
