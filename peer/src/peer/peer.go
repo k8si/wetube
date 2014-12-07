@@ -6,43 +6,47 @@ references:
 - https://gist.github.com/spikebike/2232102
 */
 
+/*
+TODO
+- connection endpoints that quit aren't removed until another message is broadcast (more or less) (this is probably a problem for director elections)
+- voting for new director has deadlock/race condition bugs
+
+TODO (longterm)
+- sending permissions
+- digital signatures
+- deal with InsecureSkipVerify
+- Youtube API
+- tests
+*/
+
 import (
-	// "container/list"
 	"bufio"
 	"crypto/rand"
 	"crypto/tls"
-	// "crypto/x509"
-	"fmt"
 	"helper"
 	"log"
-	"net"
-	"net/http"
-	"os"
-	// "strings"
-	// "time"
-	"encoding/json"
+	// "net/http"
 	"flag"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 )
 
 var (
-	initialize = flag.Bool("init", false, "is this the initial node?")
-	myAddr     = flag.String("ip", "", "your public ip address")
-	permission rune
-	self       string
+	initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
+	myAddr       = flag.String("ip", "", "your public ip address")       //TODO this is just "self"
+	permission   = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
+	self         string
+	directorAddr string
+	nodeID       int
 )
 
-type Hub struct {
-	messages map[string]chan<- Message
-	mu       sync.RWMutex
-}
-
-type Message struct {
-	Sender string
-	Body   string
-}
-
-var hub = &Hub{messages: make(map[string]chan<- Message)}
+var (
+	hub       = &Hub{peers: make(map[string]chan<- Message)}
+	welcome   Message
+	nodeidreg NodeIDRegistry
+)
 
 func main() {
 	//specify initialization with cmdline arg for now
@@ -55,37 +59,25 @@ func main() {
 	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
 	config.Rand = rand.Reader
-
-	// listener, err := net.Listen("tcp", ":3000")
 	listener, err := tls.Listen("tcp", ":3000", &config)
 	if err != nil {
 		log.Fatal(err)
 	}
-	self = listener.Addr().String()
-	log.Printf("listening on self=%s\n", self)
-	if *initialize {
-		// //TODO create cert pool?
-		// edlabCert, err := tls.LoadX509KeyPair("certs/edlab.pem", "certs/edlab.key")
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// ec2Cert, err := tls.LoadX509KeyPair("certs/ec2.pem", "certs/ec2.key")
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// homeCert, err := tls.LoadX509KeyPair("certs/home.pem", "certs/home.key")
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
 
-		// dialConfig := tls.Config{Certificates: []tls.Certificate{edlabCert, ec2Cert, homeCert}}
-		// dialConfig.Rand = rand.Reader
-		knownAddrs := []string{helper.ELNUX2, helper.ME, helper.EC2}
-		for _, addr := range knownAddrs {
-			go dial(addr)
-		}
+	self = *myAddr
+	if *permission == helper.DIRECTOR {
+		takeOffice()
 	}
-	go readInput()
+
+	log.Printf("listening on self=%s\n", self)
+
+	// if *initialize {
+	// 	knownAddrs := []string{helper.ELNUX2, helper.ME, helper.EC2, helper.ELNUX7}
+	// 	for _, addr := range knownAddrs {
+	// 		go dial(addr)
+	// 	}
+	// }
+
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -95,77 +87,68 @@ func main() {
 			go serve(conn)
 		}
 	}()
-	http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
-		msg := r.URL.Query()["msg"][0]
-		log.Printf("got jsclient message: %s\n", msg)
-		m := Message{Sender: self, Body: msg}
-		broadcast(m)
-	})
-	err2 := http.ListenAndServe("localhost:3001", nil)
-	if err2 != nil {
-		panic("browserListener(): error")
-	}
-	log.Println("listening for jsclient on port 3001")
-}
 
-func makeCerts() {
+	// http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
+	// 	msg := r.URL.Query()["msg"][0]
+	// 	log.Printf("got jsclient message: %s\n", msg)
+	// 	m := Message{Sender: self, Subject: "", Body: msg}
+	// 	broadcast(m)
+	// })
+	// err2 := http.ListenAndServe("localhost:3001", nil)
+	// if err2 != nil {
+	// 	panic("browserListener(): error")
+	// }
 
-}
-
-func dial(addr string) {
-	if addr == self {
-		return //dont dial self
-	}
-	ch := hub.Add(addr)
-	if ch == nil {
-		return //peer already connected
-	}
-	defer hub.Remove(addr)
-
-	//configure tls
-	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
-	if err != nil {
-		log.Fatal(err)
-	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
-	config.Rand = rand.Reader
-
-	//try to connect
-	log.Printf("dialing peer@%s\n", addr)
-	conn, err := tls.Dial("tcp", addr, &config)
-	if err != nil {
-		log.Printf("dial error: %s", err)
-		//TODO add retries
-		return
-	}
-	log.Printf("connected to peer@%s\n", addr)
-	defer func() {
-		conn.Close()
-		log.Printf("close connection to peer@%s\n", addr)
-	}()
-	enc := json.NewEncoder(conn)
-	for m := range ch {
-		err := enc.Encode(m)
-		if err != nil {
-			log.Printf("some err peer@%s\n", addr)
-			return
-		}
-	}
+	readInput()
 }
 
 func readInput() {
-	reader := bufio.NewReader(os.Stdin)
+	r := bufio.NewReader(os.Stdin)
 	for {
-		s, err := reader.ReadString('\n')
+		s, err := r.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
 		}
-		m := Message{Sender: self, Body: s[:len(s)-1]}
-		broadcast(m)
+		//parse the user's input
+		input := s[:len(s)-1]
+		parts := strings.Split(input, helper.MSG_DELIM)
+		if len(parts) < 2 {
+			if parts[0] == "list" {
+				hub.PrintAll()
+			} else {
+				log.Println("readInput: invalid input: input must be of form [subject]#[body]")
+			}
+			continue
+		}
+		// log.Println("readInput: got client message: subject=", parts[0], ", body=", parts[1])
+		m := Message{
+			ID:      helper.RandomID(),
+			Sender:  self,
+			Subject: parts[0],
+			Body:    parts[1],
+		}
+		//only directors/editors can send new instructions
+		if *permission < helper.VIEWER {
+			broadcast(m)
+			if *permission == helper.DIRECTOR && m.Subject == "invite" {
+				done := make(chan int)
+				go dial(m.Body, done)
+				if <-done == 0 {
+					newID := nodeidreg.getNewID()
+					newIDstr := strconv.Itoa(newID)
+					welcome.Body = directorAddr + "," + newIDstr
+					broadcast(welcome)
+				}
+			}
+			seen(m.ID)
+		} else {
+			log.Println("readInput: you dont have permission.")
+		}
 	}
 }
 
 func broadcast(msg Message) {
+	// log.Println("broadcasting message from Sender", msg.Sender, ": ", msg.Subject, msg.Body)
 	for _, ch := range hub.List() {
 		select {
 		case ch <- msg:
@@ -175,49 +158,16 @@ func broadcast(msg Message) {
 	}
 }
 
-func serve(c net.Conn) {
-	log.Println("<", c.RemoteAddr(), "accepted connection")
-	d := json.NewDecoder(c)
-	for {
-		var m Message
-		err := d.Decode(&m)
-		if err != nil {
-			log.Println("<", c.RemoteAddr(), "error:", err)
-			break
-		}
-		log.Printf("< %v received: %v", c.RemoteAddr(), m)
-		fmt.Println(m.Body)
-		broadcast(m)
-		// go dial(m.Sender)
-	}
-	c.Close()
-	log.Println("<", c.RemoteAddr(), "close")
+/* Message Log */
+var seenMessages = struct {
+	m map[string]bool
+	sync.Mutex
+}{m: make(map[string]bool)}
 
-}
-
-func (h *Hub) Add(addr string) <-chan Message {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if _, ok := h.messages[addr]; ok {
-		return nil
-	}
-	ch := make(chan Message)
-	h.messages[addr] = ch
-	return ch
-}
-
-func (h *Hub) Remove(addr string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.messages, addr)
-}
-
-func (h *Hub) List() []chan<- Message {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	l := make([]chan<- Message, 0, len(h.messages))
-	for _, ch := range h.messages {
-		l = append(l, ch)
-	}
-	return l
+func seen(id string) bool {
+	seenMessages.Lock()
+	ok := seenMessages.m[id]
+	seenMessages.m[id] = true
+	seenMessages.Unlock()
+	return ok
 }
