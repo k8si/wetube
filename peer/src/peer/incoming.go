@@ -68,7 +68,8 @@ func serve(c net.Conn) {
 			}
 
 		case "newdirector":
-			directorAddrs = append(directorAddrs, m.Sender)
+			addDirector(m.Sender)
+			// directorAddrs = append(directorAddrs, m.Sender)
 			// directorAddr = m.Sender
 
 		//msg received when director invites; try to connect back to director
@@ -76,7 +77,8 @@ func serve(c net.Conn) {
 			parts := strings.Split(m.Body, ",")
 			// directorAddr = parts[0]
 			// directorAddr = m.Sender
-			directorAddrs = append(directorAddrs, m.Sender)
+			// directorAddrs = append(directorAddrs, m.Sender)
+			addDirector(m.Sender)
 			broadcast(m)
 			if parts[0] == self {
 				nodeID, err = strconv.Atoi(parts[1])

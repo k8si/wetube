@@ -77,11 +77,3 @@ func vote(id int, addr string) {
 		broadcast(speech)
 	}
 }
-
-func takeOffice() {
-	fmt.Println("** taking office ***")
-	directorAddrs = append(directorAddrs, self)
-	*permission = 0
-	welcome = Message{ID: helper.RandomID(), Sender: self, Subject: "welcome"}
-	nodeidreg = NodeIDRegistry{id: 0}
-}

@@ -72,7 +72,11 @@ func dial(addr string, done chan int) {
 		fmt.Printf("(> %s) dial: connection closed.\n", conn.RemoteAddr())
 		conn.Close()
 		hub.PrintAll()
-		updateDirectors(checkAddr)
+		removeDirector(checkAddr) //if checkAddr isn't a director, doesnt do anything
+		printDirectors()
+		if len(directorMap.connected) == 0 {
+			go electNewDirector()
+		}
 	}()
 
 	enc := json.NewEncoder(conn)
@@ -82,24 +86,5 @@ func dial(addr string, done chan int) {
 			fmt.Printf("(> %s) dial: error: %s\n", conn.RemoteAddr(), err)
 			return
 		}
-	}
-}
-
-func updateDirectors(checkAddr string) {
-	newdirs := make([]string, 0)
-	for _, a := range directorAddrs {
-		if checkAddr != a {
-			newdirs = append(newdirs, a)
-		}
-	}
-	fmt.Printf("*** %d directors remaining: ***\n", checkAddr, len(newdirs))
-	for _, a := range newdirs {
-		fmt.Printf("\t\t%s\n", a)
-	}
-	if len(newdirs) == 0 {
-		fmt.Printf("(> %s) dial: all directors have left.\n", checkAddr)
-		go electNewDirector()
-	} else {
-		directorAddrs = newdirs
 	}
 }

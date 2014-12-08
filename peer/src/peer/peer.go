@@ -38,24 +38,18 @@ import (
 
 var (
 	// initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
-	myAddr        = flag.String("ip", "", "your public ip address") //TODO this is just "self"
-	interactive   = flag.Bool("i", false, "interactive mode")
-	permission    = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
-	self          string
-	directorAddrs []string
-	nodeID        int
+	myAddr      = flag.String("ip", "", "your public ip address") //TODO this is just "self"
+	interactive = flag.Bool("i", false, "interactive mode")
+	permission  = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
+	self        string
+	nodeID      int
 )
 
-var (
-	hub       = &Hub{peers: make(map[string]chan<- Message)}
-	welcome   Message
-	nodeidreg NodeIDRegistry
-)
+var hub = &Hub{peers: make(map[string]chan<- Message)}
 
 func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
-	directorAddrs = make([]string, 0)
 
 	//configure TLS
 	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
@@ -208,10 +202,11 @@ func readInputStdin() {
 				fmt.Printf("currently %d peers connected:\n", len(hub.List()))
 				hub.PrintAll()
 			} else if parts[0] == "dirs" {
-				fmt.Printf("currently %d directors:\n", len(directorAddrs))
-				for _, a := range directorAddrs {
-					fmt.Printf("\t\t%s\n", a)
-				}
+				printDirectors()
+				// fmt.Printf("currently %d directors:\n", len(directorAddrs))
+				// for _, a := range directorAddrs {
+				// 	fmt.Printf("\t\t%s\n", a)
+				// }
 			} else {
 				log.Println("readInput: invalid input: input must be of form [subject]#[body]")
 			}
