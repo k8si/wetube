@@ -67,7 +67,7 @@ func dial(addr string, done chan int) {
 		done <- 0
 	}
 
-	sendPing()
+	sendPing(inping)
 
 	defer func() {
 		checkAddr := strings.Split(conn.RemoteAddr().String(), ":")[0]
