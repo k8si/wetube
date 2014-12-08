@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/websocket"
 	"log"
 	// "net"
+	"flag"
 	"net/http"
 )
 
@@ -15,14 +16,14 @@ const (
 )
 
 var browserConn *websocket.Conn
+var service = flag.String("service", "localhost:4000", "[IP addr]:[port] to listen on")
 
-// func RunGUI() {
 func main() {
-	service := "localhost:" + WEBSOCKET_PORT
-	log.Println("gui listening on ", service)
+	flag.Parse()
+	log.Println("gui listening on ", *service)
 	http.Handle("/jscli", websocket.Handler(estConnection))
 	http.HandleFunc("/input", handleInput)
-	err := http.ListenAndServe(service, nil)
+	err := http.ListenAndServe(*service, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +37,7 @@ func handleInput(w http.ResponseWriter, r *http.Request) {
 	}
 	err := websocket.Message.Send(browserConn, []byte(msg))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("err sending message to jsclient: %s\n", err)
 	}
 }
 
@@ -64,14 +65,11 @@ func listen(ws *websocket.Conn) {
 		var m string
 		err := websocket.Message.Receive(ws, &m)
 		if err != nil {
-			log.Println("got err!", err.Error())
-			break
+			log.Fatal("err reading from jsclient:", err.Error())
 		}
 		log.Println("got new message: ", m)
 		res := sendToClient(m)
-		//TODO need to relay response back to browser where appropriate
 		err = websocket.Message.Send(ws, []byte(res))
-
 	}
 	log.Println("done listening.")
 }
