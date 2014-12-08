@@ -49,20 +49,28 @@ func main() {
 	// }
 
 	log.Println("hi from main")
+
 	go func() {
+		http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println("got test")
+		})
 		if err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil); err != nil {
 			log.Panic(err)
 		}
 	}()
+	if *permission == 0 {
+		done := make(chan int)
+		go sendReq(done)
+		<-done
+		fmt.Println("got response")
+	}
 	ch := make(chan bool)
 	<-ch
 
 	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	fmt.Println("got ROOT")
 	// })
-	// http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Println("got test")
-	// })
+
 	// log.Println("setting up server")
 	// err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
 	// if err != nil {
@@ -71,12 +79,6 @@ func main() {
 	// }
 	// fmt.Println("listening on :3000")
 
-	if *permission == 0 {
-		done := make(chan int)
-		go sendReq(done)
-		<-done
-		fmt.Println("got response")
-	}
 }
 
 func sendReq(out chan int) {
