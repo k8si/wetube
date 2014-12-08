@@ -68,18 +68,10 @@ func main() {
 	self = *myAddr
 
 	//configure TLS
-	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
-	k := cryptostuff.GenKeypair()
-	// kb := x509.MarshalPKCS1PrivateKey(k)
-	cryptostuff.WriteKeypair(k)
-	certbytes := cryptostuff.GenX509Cert(k)
-	cryptostuff.WriteCert(certbytes)
-	// cert, err := tls.X509KeyPair(certbytes, kb)
-
-	cert, err := tls.LoadX509KeyPair("cert.pem", "private.key")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	cert, err := tls.LoadX509KeyPair("req.pem", "privkey.key")
+	if err != nil {
+		log.Fatal(err)
+	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
 	config.Rand = rand.Reader
 
