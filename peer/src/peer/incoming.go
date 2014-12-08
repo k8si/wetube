@@ -32,6 +32,7 @@ func seen(id string) bool {
 
 func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
+	outping.Body = "OUT:" + self
 	sendPing(outping)
 	d := json.NewDecoder(c)
 	for {
@@ -135,18 +136,20 @@ func serve(c net.Conn) {
 func theresANewDirector(m Message) {
 	parts := strings.Split(m.Body, ",")
 	//this is the first director and this info is targeted at this node
-	if nDirectors() == 0 && parts[0] == self {
-		nid, err := strconv.Atoi(parts[1])
-		if err != nil {
-			log.Fatalf("bad nodeid err: %s", err)
+	if len(parts) == 2 {
+		if nDirectors() == 0 && parts[0] == self {
+			nid, err := strconv.Atoi(parts[1])
+			if err != nil {
+				log.Fatalf("bad nodeid err: %s", err)
+			}
+			nodeID = nid
+			perm, err := strconv.Atoi(parts[2])
+			if err != nil {
+				log.Fatalf("bad permission err: %s", err)
+			}
+			*permission = perm
+			fmt.Printf("*** set permission to %d ***\n", *permission)
 		}
-		nodeID = nid
-		perm, err := strconv.Atoi(parts[2])
-		if err != nil {
-			log.Fatalf("bad permission err: %s", err)
-		}
-		*permission = perm
-		fmt.Printf("*** set permission to %d ***\n", *permission)
 	}
 	addDirector(m.Sender)
 	broadcast(m)

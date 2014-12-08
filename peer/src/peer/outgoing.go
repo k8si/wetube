@@ -67,8 +67,6 @@ func dial(addr string, done chan int) {
 		done <- 0
 	}
 
-	sendPing(inping)
-
 	defer func() {
 		checkAddr := strings.Split(conn.RemoteAddr().String(), ":")[0]
 		fmt.Printf("(> %s) dial: connection closed.\n", conn.RemoteAddr())
@@ -80,6 +78,9 @@ func dial(addr string, done chan int) {
 			go electNewDirector()
 		}
 	}()
+
+	inping.Body = "IN:" + self
+	sendPing(inping)
 
 	enc := json.NewEncoder(conn)
 	for m := range ch {
