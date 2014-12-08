@@ -68,7 +68,15 @@ func (m *Message) verify() bool {
 	pubkey := getkey(m.Sender)
 	if pubkey == nil {
 		log.Println("no public key found for addr ", m.Sender)
-		return false
+		log.Println("trying to dial...")
+		done := make(chan int)
+		go dial(m.Sender, done)
+		<-done
+		pubkey = getkey(m.Sender)
+		if pubkey == nil {
+			log.Println("definitely no public key found for addr", m.Sender)
+			return false
+		}
 	}
 	hashed := m.Hash()
 	err := rsa.VerifyPKCS1v15(pubkey, crypto.MD5, hashed, m.Signature)
