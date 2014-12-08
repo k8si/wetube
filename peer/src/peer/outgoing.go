@@ -83,6 +83,10 @@ func dial(addr string, done chan int) {
 			go electNewDirector()
 		} else {
 			directorAddrs = newdirs
+			fmt.Printf("(> %s) dial: %d directors left:\n", checkAddr, len(newdirs))
+			for _, a := range directorAddrs {
+				fmt.Printf("\t\t%s\n", a)
+			}
 		}
 
 		// if checkAddr == directorAddr {
