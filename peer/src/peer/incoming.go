@@ -68,7 +68,7 @@ func serve(c net.Conn) {
 		// 		broadcast(hi)
 		// 	}
 		case "ping":
-			fmt.Println("*** got ping for %s ***\n", m.Body)
+			fmt.Printf("*** got ping for %s ***\n", m.Body)
 			// if len(m.Body) > 0 {
 			// 	go dial(m.Body, nil)
 			// }
