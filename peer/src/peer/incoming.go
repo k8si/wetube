@@ -1,6 +1,7 @@
 package main
 
 import (
+	// "crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"helper"
@@ -33,6 +34,7 @@ func seen(id string) bool {
 func serve(c net.Conn) {
 	log.SetPrefix("serve: ")
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
+
 	sendPing()
 	d := json.NewDecoder(c)
 	for {
@@ -85,6 +87,17 @@ func serve(c net.Conn) {
 				broadcast(response)
 				fmt.Printf("(< %s) serve: broadcasted response\n", c.RemoteAddr())
 			}
+			// } else if m.Body == "key" {
+			// 	mod, err := pubkey.N.MarshalText() //pubkey.N.String() //strconv.Itoa(pubkey.N)
+			// 	if err != nil {
+			// 		log.Fatal(err)
+			// 	}
+			// 	exp := []byte(strconv.Itoa(pubkey.E))
+			// 	st := struct{N: mod, E: exp}
+			// 	// msg := mod + "," + exp
+			// 	response := Message{Sender: self, ID: helper.RandomID(), Subject: "key", Body: st}
+			// 	broadcast(response)
+			// }
 
 		//response to my request for info
 		case "response":
@@ -102,6 +115,16 @@ func serve(c net.Conn) {
 			if len(nodeIDs.m) == n {
 				allReceived <- true
 			}
+
+		case "key":
+			fmt.Println("key")
+			// parts := strings.Split(m.Body, ",")
+			// if len(parts) != 2 {
+			// 	log.Fatal("bad public key rcvd")
+			// }
+			// nstr := parts[0]
+			// estr := parts[1]
+			// k := rsa.PublicKey{}
 
 		case "vote":
 			fmt.Printf("(< %s) serve: received vote\n", c.RemoteAddr())

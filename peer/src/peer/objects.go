@@ -1,15 +1,36 @@
 package main
 
 import (
+	"crypto"
+	"crypto/md5"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
+	"log"
 	"sync"
 )
 
 type Message struct {
-	ID      string
-	Sender  string
-	Subject string
-	Body    string
+	ID        string
+	Sender    string
+	Subject   string
+	Body      string
+	Signature []byte
+}
+
+func (m *Message) sign() {
+	// h := md5.Sum([]byte(m.Body))
+	hf := md5.New()
+	h := hf.Sum([]byte(m.Body))
+	s, err := rsa.SignPKCS1v15(rand.Reader, privkey, crypto.MD5, h)
+	if err != nil {
+		log.Panic(err)
+	}
+	m.Signature = s
+}
+
+func (m *Message) verify() {
+	// err := rsa.VerifyPKCS1v15()
 }
 
 //used for voting

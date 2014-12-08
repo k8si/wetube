@@ -1,12 +1,19 @@
 package main
 
 import (
-	"crypto/rand"
+	// "crypto/rand"
+	// "bufio"
 	"crypto/tls"
+	// "crypto/x509"
+	// "crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
 	"helper"
+	"io/ioutil"
 	"log"
+	// "math/big"
+	"net"
+	// "os"
 	"strings"
 	// "time"
 )
@@ -42,14 +49,44 @@ func dial(addr string, done chan int) {
 
 	defer hub.Remove(addr)
 
-	//configure tls
-	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
-	cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	// // tcpAddrstr := addr + ":" + helper.TCP_PORT
+	// // tcpAddr, err := net.ResolveTCPAddr("tcp", tcpAddrstr)
+	// // if err != nil {
+	// // 	log.Fatal(err)
+	// // }
+	// raddr := &net.TCPAddr{IP: net.ParseIP(addr), Port: 3000, Zone: ""}
+	// laddr := &net.TCPAddr{IP: net.ParseIP(self), Port: 3000, Zone: ""}
+	// c, err := net.DialTCP("tcp", laddr, raddr)
+	// if err != nil {
+	// 	fmt.Println("dial error")
+	// 	log.Fatal(err)
+	// }
+	// config := tls.Config{ServerName: self}
+	// config.Rand = rand.Reader
+	// conn := tls.Client(c, &config)
+	hostname, err := net.LookupAddr(addr)
 	if err != nil {
+		log.Println("err looking up hostname for ", addr)
 		log.Fatal(err)
 	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
-	config.Rand = rand.Reader
+	log.Println("got hostname: ", hostname)
+
+	// //configure tls
+	// roots := x509.NewCertPool()
+	// pem := readInCert()
+	// log.Println(len(pem))
+	// ok := roots.AppendCertsFromPEM(pem)
+	// if !ok {
+	// 	log.Fatal("failed to AppendCertsFromPEM")
+	// }
+	// cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true} //ServerName: hostname[0]}
+	// config := tls.Config{InsecureSkipVerify: true}
+	config := tls.Config{ServerName: hostname[0]}
+	// config := tls.Config{RootCAs: roots, ServerName: hostname[0]}
 
 	//try to connect
 	fmt.Printf("(> %s) dial: dialing port 3000...\n", addr)
@@ -92,4 +129,32 @@ func dial(addr string, done chan int) {
 			return
 		}
 	}
+}
+
+// func genCert(): x509.Certificate {
+// 	template := x509.Certificate{}
+// 	lim := new(big.Int).Lsh(big.NewInt(1), 128)
+// 	serialno, err := rand.Int(rand.Reader, lim)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	template.SerialNumber = serialno
+// 	template.Subject = pkix.Name{Organization: []string{"whatevz"}}
+// 	c, err := x509.CreateCertificate(rand.Reader, &template, &template, )
+
+// }
+
+func readInCert() []byte {
+	b, err := ioutil.ReadFile("cert.pem")
+	if err != nil {
+		return nil
+	}
+	return b
+	// f, err := os.Open("cert.pem")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer f.Close()
+	// scanner := bufio.NewScanner(f)
+	// return scanner.Bytes()
 }

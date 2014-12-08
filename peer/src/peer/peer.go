@@ -24,6 +24,7 @@ TODO (longterm)
 import (
 	"bufio"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -43,18 +44,36 @@ var (
 	permission  = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
 	self        string
 	nodeID      int
+	privkey     *rsa.PrivateKey
+	pubkey      *rsa.PublicKey
 )
 
 var hub = &Hub{peers: make(map[string]chan<- Message)}
+
+var keystore = struct {
+	m map[string]*rsa.PublicKey
+}{m: make(map[string]*rsa.PublicKey)}
+
+func addkey(addr string, k *rsa.PublicKey) {
+	if _, ok := keystore.m[addr]; !ok {
+		keystore.m[addr] = k
+	}
+}
 
 func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
 	self = *myAddr
+	p, err := rsa.GenerateKey(rand.Reader, 512)
+	if err != nil {
+		log.Fatal(err)
+	}
+	privkey = p
+	pubkey = &privkey.PublicKey
 
 	//configure TLS
 	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
-	cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	cert, err := tls.LoadX509KeyPair("cert.pem", "private.key")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,6 +94,14 @@ func main() {
 			conn, err := listener.Accept()
 			if err != nil {
 				log.Fatal(err)
+			}
+			// addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
+			// cs := conn.(tls.Conn).ConnectionState
+			tlsconn, ok := conn.(*tls.Conn)
+			if ok {
+				cs := tlsconn.ConnectionState()
+				fmt.Println("numcerts: ", len(cs.PeerCertificates))
+
 			}
 			go serve(conn)
 		}
