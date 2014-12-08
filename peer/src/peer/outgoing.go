@@ -72,21 +72,7 @@ func dial(addr string, done chan int) {
 	log.Println("got hostname: ", hostname)
 
 	// //configure tls
-	// roots := x509.NewCertPool()
-	// pem := readInCert()
-	// log.Println(len(pem))
-	// ok := roots.AppendCertsFromPEM(pem)
-	// if !ok {
-	// 	log.Fatal("failed to AppendCertsFromPEM")
-	// }
-	// cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true} //ServerName: hostname[0]}
-	// config := tls.Config{InsecureSkipVerify: true}
-	config := tls.Config{ServerName: hostname[0]}
-	// config := tls.Config{RootCAs: roots, ServerName: hostname[0]}
+	config := tls.Config{ServerName: hostname[0], InsecureSkipVerify: true} // I could not get this work
 
 	//try to connect
 	fmt.Printf("(> %s) dial: dialing port 3000...\n", addr)
