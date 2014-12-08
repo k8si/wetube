@@ -27,7 +27,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	// "crypto/x509"
-	"cryptostuff"
+	// "cryptostuff"
 	"flag"
 	"fmt"
 	"helper"
@@ -66,9 +66,8 @@ func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
 	self = *myAddr
-
 	//configure TLS
-	cert, err := tls.LoadX509KeyPair("req.pem", "privkey.key")
+	cert, err := tls.LoadX509KeyPair("server_cert.pem", "server_key.pem")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,9 +80,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	log.Printf("listening on self=%s\n", self)
-
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -95,8 +92,7 @@ func main() {
 			tlsconn, ok := conn.(*tls.Conn)
 			if ok {
 				cs := tlsconn.ConnectionState()
-				fmt.Println("numcerts: ", len(cs.PeerCertificates))
-
+				log.Println(cs)
 			}
 			go serve(conn)
 		}
