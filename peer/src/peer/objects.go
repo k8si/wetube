@@ -46,8 +46,10 @@ func (h *Hub) Add(addr string) <-chan Message {
 func (h *Hub) Remove(addr string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if h.peers[addr] != nil {
+		close(h.peers[addr])
+	}
 	delete(h.peers, addr)
-	// fmt.Printf("hub.Remove: removed addr %s\n", addr)
 }
 
 func (h *Hub) List() []chan<- Message {

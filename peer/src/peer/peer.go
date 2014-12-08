@@ -12,6 +12,8 @@ TODO
 - voting for new director has deadlock/race condition bugs
 
 TODO (longterm)
+- election procedure probably wont survive multiple directors (e.g. multiple peers will be assigned ID "1")
+- IN GENERAL need to deal with having multiple directors
 - sending permissions
 - digital signatures
 - deal with InsecureSkipVerify
@@ -36,12 +38,12 @@ import (
 
 var (
 	// initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
-	myAddr       = flag.String("ip", "", "your public ip address") //TODO this is just "self"
-	interactive  = flag.Bool("i", false, "interactive mode")
-	permission   = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
-	self         string
-	directorAddr string
-	nodeID       int
+	myAddr        = flag.String("ip", "", "your public ip address") //TODO this is just "self"
+	interactive   = flag.Bool("i", false, "interactive mode")
+	permission    = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
+	self          string
+	directorAddrs []string
+	nodeID        int
 )
 
 var (
@@ -53,6 +55,7 @@ var (
 func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
+	directorAddrs = make([]string, 0)
 
 	//configure TLS
 	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
@@ -61,6 +64,8 @@ func main() {
 	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
 	config.Rand = rand.Reader
+
+	//listen on port 3000 for incoming connections
 	listener, err := tls.Listen("tcp", ":3000", &config)
 	if err != nil {
 		log.Fatal(err)
@@ -70,12 +75,14 @@ func main() {
 
 	log.Printf("listening on self=%s\n", self)
 
+	//if we're the director, invite peers in the file "invitees.txt"
 	//TODO there are probably much better way(s)
 	if *permission == helper.DIRECTOR {
 		takeOffice()
 		done := make(chan []string)
 		go readInvitees(done)
 		<-done
+		log.Println("*** done inviting peers ***")
 		// for _, a := range <-done {
 		// 	if a != "" {
 		// 		fmt.Println("invited ", a)
@@ -146,16 +153,20 @@ func invitePeer(addr string, perm string, done chan int) {
 		log.Fatal("bad permission in invitees.txt")
 	}
 	dialed := make(chan int)
+	// welcomed := make(chan int)
 	go dial(addr, dialed)
 	if <-dialed == 0 {
-		newID := strconv.Itoa(nodeidreg.getNewID())
-		welcome := Message{ID: helper.RandomID(), Sender: self, Subject: "welcome", Body: self + "," + newID} //+ "," + perm}
+		newID := nodeidreg.getNewID()
+		newIDstr := strconv.Itoa(newID)
+		//TODO send the new node its permission too
+		welcome := Message{ID: helper.RandomID(), Sender: self, Subject: "welcome", Body: addr + "," + newIDstr + "," + perm}
 		broadcast(welcome)
 		done <- 0
 	}
 	done <- 1
 }
 
+/* send messages to gui */
 func sendToGui(msg string) {
 	fmt.Println("sending ", msg, "to gui")
 	req := "http://localhost:4000/input?msg=" + msg
@@ -165,7 +176,7 @@ func sendToGui(msg string) {
 	}
 }
 
-/* relay messages to gui */
+/* listen for messages from gui */
 func readInput() {
 	http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
 		msg := r.URL.Query()["msg"][0]

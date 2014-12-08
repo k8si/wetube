@@ -8,9 +8,11 @@ import (
 	"helper"
 	"log"
 	"strings"
+	// "time"
 )
 
 func broadcast(msg Message) {
+	log.Printf("broadcasting: subject=%s, body=%s", msg.Subject, msg.Body)
 	for _, ch := range hub.List() {
 		select {
 		case ch <- msg:
@@ -19,6 +21,10 @@ func broadcast(msg Message) {
 		}
 	}
 }
+
+// func sendCloseSignal(addr string) {
+// hub.Remove(addr)
+// }
 
 func dial(addr string, done chan int) {
 	if addr == self {
@@ -31,7 +37,9 @@ func dial(addr string, done chan int) {
 		}
 		return //peer already connected
 	}
+
 	defer hub.Remove(addr)
+
 	//configure tls
 	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
 	if err != nil {
@@ -44,6 +52,7 @@ func dial(addr string, done chan int) {
 	fmt.Printf("(> %s) dial: dialing port 3000...\n", addr)
 	tcpAddr := addr + ":" + helper.TCP_PORT
 	conn, err := tls.Dial("tcp", tcpAddr, &config)
+
 	if err != nil {
 		fmt.Printf("(> %s) dial: dial error: %s\n", addr, err)
 		//TODO add retries
@@ -62,13 +71,24 @@ func dial(addr string, done chan int) {
 		checkAddr := strings.Split(conn.RemoteAddr().String(), ":")[0]
 		fmt.Printf("(> %s) dial: connection closed.\n", conn.RemoteAddr())
 		conn.Close()
-		// ping := Message{ID: helper.RandomID(), Sender: self, Subject: "ping", Body: "ping"}
-		// broadcast(ping)
 		hub.PrintAll()
-		if checkAddr == directorAddr {
-			fmt.Printf("(> %s) dial: director has left.\n", checkAddr)
-			go electNewDirector()
+		newdirs := make([]string, 0)
+		for _, a := range directorAddrs {
+			if checkAddr != a {
+				newdirs = append(newdirs, a)
+			}
 		}
+		if len(newdirs) == 0 {
+			fmt.Printf("(> %s) dial: all directors have left.\n", checkAddr)
+			go electNewDirector()
+		} else {
+			directorAddrs = newdirs
+		}
+
+		// if checkAddr == directorAddr {
+		// fmt.Printf("(> %s) dial: director has left.\n", checkAddr)
+		// go electNewDirector()
+		// }
 	}()
 
 	enc := json.NewEncoder(conn)
@@ -80,3 +100,25 @@ func dial(addr string, done chan int) {
 		}
 	}
 }
+
+// if err != nil {
+// 	ch := make(chan *tls.Conn)
+// 	go func(a string, c tls.Config, done chan *tls.Conn) {
+// 		for numtries := 0; numtries < 2; numtries += 1 {
+// 			fmt.Printf("(> %s) dial: dial error: %s. waiting...\n", a, err)
+// 			time.Sleep(time.Duration(10) * time.Second)
+// 			fmt.Printf("(> %s) dial: dial error: %s. retrying...\n", a, err)
+// 			conn, err = tls.Dial("tcp", a, &c)
+// 			if err != nil {
+// 				numtries += 1
+// 				continue
+// 			}
+// 			done <- conn
+// 		}
+// 		done <- nil
+// 	}(tcpAddr, config, ch)
+// 	conn = <-ch
+// 	if conn == nil {
+// 		log.Fatal("couldnt get conn")
+// 	}
+// }

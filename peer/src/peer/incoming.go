@@ -25,6 +25,11 @@ func seen(id string) bool {
 	return ok
 }
 
+/*
+	newpeer := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: addr}
+	broadcast(newpeer)
+*/
+
 func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
 	d := json.NewDecoder(c)
@@ -46,6 +51,8 @@ func serve(c net.Conn) {
 
 		fmt.Printf("(< %v) serve: RCVD: %v\n", c.RemoteAddr(), m)
 
+		go dial(m.Sender, nil)
+
 		/* ROUTES */
 		switch m.Subject {
 
@@ -60,15 +67,31 @@ func serve(c net.Conn) {
 				broadcast(hi)
 			}
 
+		case "newdirector":
+			directorAddrs = append(directorAddrs, m.Sender)
+			// directorAddr = m.Sender
+
 		//msg received when director invites; try to connect back to director
 		case "welcome":
 			parts := strings.Split(m.Body, ",")
-			directorAddr = parts[0]
-			nodeID, err = strconv.Atoi(parts[1])
-			if err != nil {
-				log.Fatal(err)
+			// directorAddr = parts[0]
+			// directorAddr = m.Sender
+			directorAddrs = append(directorAddrs, m.Sender)
+			if parts[0] == self {
+				nodeID, err = strconv.Atoi(parts[1])
+				if err != nil {
+					log.Fatal(err)
+				}
+				perm, err := strconv.Atoi(parts[2])
+				if err != nil {
+					log.Fatal(err)
+				}
+				*permission = perm
+				fmt.Printf("*** set permission to %d ***\n", *permission)
+				// newpeer := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: self}
+				// broadcast(newpeer)
+				// go dial(directorAddr, nil)
 			}
-			go dial(directorAddr, nil)
 
 		//ping sent when a peer closes; send "ack" to indicate you're still alive
 		case "ping":
@@ -86,7 +109,6 @@ func serve(c net.Conn) {
 		//response to my request for info
 		case "response":
 			fmt.Printf("(< %s) serve: received response\n", c.RemoteAddr())
-			//addr,id
 			parts := strings.Split(m.Body, ",")
 			idstr := parts[1]
 			id, err := strconv.Atoi(idstr)
@@ -96,15 +118,13 @@ func serve(c net.Conn) {
 			nodeIDs.Lock()
 			nodeIDs.m[parts[0]] = id
 			nodeIDs.Unlock()
-			// n := len(hub.List())
-			allReceived <- len(nodeIDs.m) == len(hub.List())
-			// if len(nodeIDs.m) == n {
-			// 	allReceived <- true
-			// }
+			n := len(hub.List())
+			if len(nodeIDs.m) == n {
+				allReceived <- true
+			}
 
 		case "vote":
 			fmt.Printf("(< %s) serve: received vote\n", c.RemoteAddr())
-			//addr,id
 			parts := strings.Split(m.Body, ",")
 			idstr := parts[1]
 			id, err := strconv.Atoi(idstr)
@@ -114,36 +134,25 @@ func serve(c net.Conn) {
 			votes.Lock()
 			votes.m[parts[0]] = id
 			votes.Unlock()
-			// n := len(hub.List())
-			allVotesReceived <- len(votes.m) == len(hub.List())
-			// if len(votes.m) == n {
-			// 	allVotesReceived <- true
-			// } else {
-			// 	fmt.Printf("(< %s) serve: still waiting for more votes\n", c.RemoteAddr())
-			// }
+			n := len(hub.List())
+			if len(votes.m) == n {
+				allVotesReceived <- true
+			}
 
 		case "ack", "msg":
 			broadcast(m)
-			sendToGui(m.Body)
+			// sendToGui(m.Body)
 			//TODO colleck ACKs, remove from hub if none from [addr] ?
 
 		default:
-
+			// go dial(m.Sender, nil)
 		}
-		go dial(m.Sender, nil)
+
 	}
 	caddr := c.RemoteAddr()
-	// checkAddr := strings.Split(c.RemoteAddr().String(), ":")[0]
-	// hub.Remove(checkAddr)
 	c.Close()
 	fmt.Printf("(< %s) serve: connection closed.\n", caddr)
+	bareAddr := strings.Split(caddr.String(), ":")[0]
+	hub.Remove(bareAddr)
 
-	// ping := Message{ID: helper.RandomID(), Sender: self, Subject: "ping", Body: "ping"}
-	// broadcast(ping)
-
-	// hub.PrintAll()
-	// if checkAddr == directorAddr {
-	// 	fmt.Printf("(< %s) serve: the director left.\n", checkAddr)
-	// 	go electNewDirector()
-	// }
 }

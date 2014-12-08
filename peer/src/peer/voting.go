@@ -18,56 +18,12 @@ var nodeIDs = struct {
 	sync.Mutex
 }{m: make(map[string]int)}
 
-var votes = struct {
-	m map[string]int
-	sync.Mutex
-}{m: make(map[string]int)}
-
-func takeOffice() {
-	fmt.Println("** taking office ***")
-	directorAddr = self
-	*permission = 0
-	welcome = Message{ID: helper.RandomID(), Sender: self, Subject: "welcome"}
-	nodeidreg = NodeIDRegistry{id: 0}
-}
-
-func vote(id int, addr string) {
-	idstr := strconv.Itoa(id)
-	m := Message{Sender: self, ID: helper.RandomID(), Subject: "vote", Body: addr + "," + idstr}
-	broadcast(m)
-	consensus := false
-	chosen := nodeID
-	if <-allReceived {
-		for {
-			//block until all votes received
-			if <-allVotesReceived {
-				fmt.Println("*** all votes received ***")
-				for _, id := range votes.m {
-					fmt.Printf(" \t\t vote [ %d ] \n", id)
-					if id != chosen {
-						consensus = false
-					}
-				}
-				break
-			}
-			continue
-		}
-	}
-	if consensus {
-		//then I am the new director
-		log.Println("** I am the new director **")
-		takeOffice()
-		speech := Message{Sender: self, ID: helper.RandomID(), Subject: "welcome", Body: self + "," + strconv.Itoa(chosen)}
-		broadcast(speech)
-	}
-}
-
 func electNewDirector() {
 	log.Println("*** starting election ***")
-	conns := hub.List()
-	log.Println("connected to ", len(conns), "peers")
+	n := len(hub.List())
+	log.Println("connected to ", n, "peers")
 	hub.PrintAll()
-	if len(conns) == 0 {
+	if n == 0 {
 		//then I am the new director
 		log.Println("** I am the new director **")
 		takeOffice()
@@ -77,26 +33,55 @@ func electNewDirector() {
 		broadcast(request)
 		electID := nodeID
 		electAddr := self
-		//block untill all node ids received
-		for {
-			if <-allReceived {
-				fmt.Println("** received all nodeids **")
-				for addr, id := range nodeIDs.m {
-					fmt.Printf("\t %s %d\n", addr, id)
-					if id < electID {
-						electID = id
-						electAddr = addr
-					}
-				}
-				break
+		fmt.Printf("*** waiting for %d responses ... ***\n", n)
+		<-allReceived
+		fmt.Println("*** all nodeIDs received. ***")
+		for addr, id := range nodeIDs.m {
+			fmt.Printf("\t %s %d\n", addr, id)
+			if id < electID {
+				electID = id
+				electAddr = addr
 			}
-			continue
 		}
-		fmt.Printf("** Im voting for id=%d @ addr=%s **\n", electID, electAddr)
-		// allReceived = make(chan bool)
 		//send vote
 		vote(electID, electAddr)
 	}
-	//vote for the node with the min(nodeid) -- should be no ties cuz of the way nodeIDs are assigned
-	// vote.ID = helper.RandomID()
+}
+
+var votes = struct {
+	m map[string]int
+	sync.Mutex
+}{m: make(map[string]int)}
+
+func vote(id int, addr string) {
+	fmt.Printf("** voting for id=%d @ addr=%s **\n", id, addr)
+	idstr := strconv.Itoa(id)
+	m := Message{Sender: self, ID: helper.RandomID(), Subject: "vote", Body: addr + "," + idstr}
+	broadcast(m)
+	consensus := true
+	chosen := nodeID
+	<-allVotesReceived
+	fmt.Println("*** all votes received ***")
+	votes.m[self] = nodeID
+	for a, id := range votes.m {
+		fmt.Printf(" \t\t %s vote [ %d ] \n", a, id)
+		if id != chosen {
+			consensus = false
+		}
+	}
+	if consensus {
+		//then I am the new director
+		log.Println("** I am the new director **")
+		takeOffice()
+		speech := Message{Sender: self, ID: helper.RandomID(), Subject: "newdirector", Body: "itsme"}
+		broadcast(speech)
+	}
+}
+
+func takeOffice() {
+	fmt.Println("** taking office ***")
+	directorAddrs = append(directorAddrs, self)
+	*permission = 0
+	welcome = Message{ID: helper.RandomID(), Sender: self, Subject: "welcome"}
+	nodeidreg = NodeIDRegistry{id: 0}
 }
