@@ -69,10 +69,10 @@ func serve(c net.Conn) {
 		// 	}
 		case "ping":
 			fmt.Printf("*** got ping for %s ***\n", m.Body)
-			// if len(m.Body) > 0 {
-			// 	go dial(m.Body, nil)
-			// }
-			go dial(m.Body, nil)
+			//if we try to dial an empty address we end up dialing 127.0.0.1
+			if len(m.Body) > 0 {
+				go dial(m.Body, nil)
+			}
 
 		//message requesting some info about me
 		case "request":
