@@ -1,4 +1,4 @@
-wetube
+WETUBE
 ======
 
 # Getting Started
@@ -8,9 +8,9 @@ wetube
 3. Set your `GOPATH`: `export GOPATH=$PWD/peer`
 4. Build all of the things: `./build.sh [your-email] [your-computers-hostname]` (the arguments to `build.sh` are used to generate RSA keys -- the script will ask you for a password, which you should leave blank for security reasons i.e. I am not secure about whether or not anything will work if you provide a password)
 5. Start all of the things: `./start.sh [your-public-ip-address]`
-6. Open a browser window to `http://localhost:8080` and start tubin'. It might be more fun if you repeat steps 1-5 process on a bunch of internet-connected computers that are on different subnets.
+6. Open a browser window to `http://localhost:8080` and start tubin'. It might be more fun if you repeat steps 1-5 process on a bunch of internet-connected computers that are on different subnets. See *Kicking the Tires*.
 
-**NOTE** `start.sh` will start the GUI, the http server, and the Wetube client as background processes (it prints the PID for each). If you for some reason should want to stop any of these components, you'll have to `kill [pid]`. Alternatively, you could just run the relevant commands in separate windows:
+**NOTE** `start.sh` will start the GUI, the http server, and the Wetube client as background processes (it prints the PID for each). If you for some reason should want to stop any of these components, you'll have to `kill [pid]`. Alternatively, you could just run the relevant commands in separate windows (which may be easier anyhow):
 
 			./wetube [your-public-ip-addr]
 			./gui
@@ -23,6 +23,36 @@ After you're done with everything, or if you want to start over, you can run `./
 * *Nix OS (this code was tested on OSX Yosemite and Ubuntu 14.04.1 LTS)
 * node and npm
 * go
+
+# Kicking the Tires
+
+### invitees.txt
+(TODO)
+
+# Probable Problems
+
+* If you're running wetube on a remote host e.g. EC2, you can't visit "localhost:4000" and get the server -- you have to visit "[EC2-IP]:4000". Since the websockets URL is hardcoded into Javascript, this messes up the GUI and causes errors. *(TODO explanation)*
+* If you're running on EC2, sometimes ExpressJS doesn't work mysteriously -- see [this](http://iws.io/hosting-a-nodejs-express-application-on-amazon-web-services-ec2/), you have to do the parts about `nvm` for some reason.
+* I can't `npm install` anything on the edlab machines. Maybe there's a way, I'm too tired to figure it out.
+* During `./build.sh`, the edlab machines throw this error:
+
+go building...
+/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+command-line-arguments
+# command-line-arguments
+./director.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/helper.a: not a package file
+/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+command-line-arguments
+# command-line-arguments
+./handlegui.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/golang.org/x/net/websocket.a: not a package file
+/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+
+but no on else does.
+
+
+
+
+
 
 
 # links
