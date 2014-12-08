@@ -5,8 +5,8 @@ import (
 	// "crypto/rand"
 	// "crypto/tls"
 	"flag"
-	"fmt"
-	"helper"
+	// "fmt"
+	// "helper"
 	"log"
 	"net/http"
 	// "os"
@@ -26,70 +26,16 @@ var (
 
 var hub = &Hub{peers: make(map[string]chan<- Message)}
 
-func main() {
-	log.SetPrefix("main: ")
-	//specify initialization with cmdline arg for now
-	flag.Parse()
-	self = *myAddr
-
-	// //configure TLS
-	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// config := tls.Config{Certificates: []tls.Certificate{cert}}
-	// config.Rand = rand.Reader
-	// http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Println("got test")
-	// })
-
-	// err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	log.Println("hi from main")
-
-	go func() {
-		http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println("got test")
-		})
-		if err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil); err != nil {
-			log.Panic(err)
-		}
-	}()
-	if *permission == 0 {
-		done := make(chan int)
-		go sendReq(done)
-		<-done
-		fmt.Println("got response")
-	}
-	ch := make(chan bool)
-	<-ch
-
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Println("got ROOT")
-	// })
-
-	// log.Println("setting up server")
-	// err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
-	// if err != nil {
-	// 	fmt.Println("there was an error")
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("listening on :3000")
-
+func handler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("example server.\n"))
 }
 
-func sendReq(out chan int) {
-	fmt.Println("sending req")
-	testAddr := helper.EC2
-	testReq := "https://" + testAddr + ":3000/test"
-	fmt.Println("sending GET for: ", testReq)
-	_, err := http.Get(testReq)
+func main() {
+	http.HandleFunc("/", handler)
+	log.Printf("about to listen on 10443")
+	err := http.ListenAndServeTLS(":10443", "cert.pem", "key.pem", nil)
 	if err != nil {
-		fmt.Println("GET: error")
-		out <- 1
+		log.Fatal(err)
 	}
-	out <- 0
 }

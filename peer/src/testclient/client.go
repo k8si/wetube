@@ -2,13 +2,13 @@ package main
 
 import (
 	// "bufio"
-	// "crypto/rand"
-	// "crypto/tls"
+	"crypto/rand"
+	"crypto/tls"
 	// "flag"
 	// "fmt"
 	// "helper"
 	"log"
-	"net/http"
+	// "net/http"
 	// "os"
 	// "strconv"
 	// "strings"
@@ -16,10 +16,25 @@ import (
 )
 
 func main() {
-	req := "https://174.62.219.8:10443/"
-	res, err := http.Get(req)
+	cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(res)
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
+	config.Rand = rand.Reader
+	addr := "174.62.219.8:10443"
+	conn, err := tls.Dial("tcp", addr, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	conn.Write([]byte("hi"))
+	// client := tls.Client(conn, &config)
+
+	// req := "https://174.62.219.8:10443/"
+	// res, err := http.Get(req)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println(res)
 }
