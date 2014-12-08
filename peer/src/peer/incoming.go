@@ -56,50 +56,16 @@ func serve(c net.Conn) {
 		/* ROUTES */
 		switch m.Subject {
 
-		//try to connect to another peer
-		case "invite":
-			fmt.Printf("(< %s) serve: inviting peer @ %s\n", c.RemoteAddr(), m.Body)
-			done := make(chan int)
-			go dial(m.Body, done)
-			if <-done == 0 {
-				hi := Message{Sender: self, ID: helper.RandomID(), Subject: "msg", Body: "hi"}
-				fmt.Printf("(< %s) serve: sending hi to %s\n", c.RemoteAddr(), m.Body)
-				broadcast(hi)
-			}
-
-		case "newdirector":
-			addDirector(m.Sender)
-			// directorAddrs = append(directorAddrs, m.Sender)
-			// directorAddr = m.Sender
-
-		//msg received when director invites; try to connect back to director
-		case "welcome":
-			parts := strings.Split(m.Body, ",")
-			// directorAddr = parts[0]
-			// directorAddr = m.Sender
-			// directorAddrs = append(directorAddrs, m.Sender)
-			addDirector(m.Sender)
-			broadcast(m)
-			if parts[0] == self {
-				nodeID, err = strconv.Atoi(parts[1])
-				if err != nil {
-					log.Fatal(err)
-				}
-				perm, err := strconv.Atoi(parts[2])
-				if err != nil {
-					log.Fatal(err)
-				}
-				*permission = perm
-				fmt.Printf("*** set permission to %d ***\n", *permission)
-				// newpeer := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: self}
-				// broadcast(newpeer)
-				// go dial(directorAddr, nil)
-			}
-
-		//ping sent when a peer closes; send "ack" to indicate you're still alive
-		case "ping":
-			ack := Message{Sender: self, ID: helper.RandomID(), Subject: "ack", Body: "ACK"}
-			broadcast(ack)
+		// //try to connect to another peer
+		// case "invite":
+		// 	fmt.Printf("(< %s) serve: inviting peer @ %s\n", c.RemoteAddr(), m.Body)
+		// 	done := make(chan int)
+		// 	go dial(m.Body, done)
+		// 	if <-done == 0 {
+		// 		hi := Message{Sender: self, ID: helper.RandomID(), Subject: "msg", Body: "hi"}
+		// 		fmt.Printf("(< %s) serve: sending hi to %s\n", c.RemoteAddr(), m.Body)
+		// 		broadcast(hi)
+		// 	}
 
 		//message requesting some info about me
 		case "request":
@@ -109,6 +75,7 @@ func serve(c net.Conn) {
 				broadcast(response)
 				fmt.Printf("(< %s) serve: broadcasted response\n", c.RemoteAddr())
 			}
+
 		//response to my request for info
 		case "response":
 			fmt.Printf("(< %s) serve: received response\n", c.RemoteAddr())
@@ -142,12 +109,15 @@ func serve(c net.Conn) {
 				allVotesReceived <- true
 			}
 
-		case "ack", "msg":
+		case "msg":
 			broadcast(m)
 			// sendToGui(m.Body)
-			//TODO colleck ACKs, remove from hub if none from [addr] ?
+
+		case "welcome", "newdirector":
+			theresANewDirector(m)
 
 		default:
+			log.Fatalf("(< %s) serve: invalid message: %s %s %s", m.Sender, m.Subject, m.Body)
 			// go dial(m.Sender, nil)
 		}
 
@@ -157,5 +127,24 @@ func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: connection closed.\n", caddr)
 	bareAddr := strings.Split(caddr.String(), ":")[0]
 	hub.Remove(bareAddr)
+}
 
+func theresANewDirector(m Message) {
+	parts := strings.Split(m.Body, ",")
+	//this is the first director and this info is targeted at this node
+	if nDirectors() == 0 && parts[0] == self {
+		nid, err := strconv.Atoi(parts[1])
+		if err != nil {
+			log.Fatalf("bad nodeid err: %s", err)
+		}
+		nodeID = nid
+		perm, err := strconv.Atoi(parts[2])
+		if err != nil {
+			log.Fatalf("bad permission err: %s", err)
+		}
+		*permission = perm
+		fmt.Printf("*** set permission to %d ***\n", *permission)
+	}
+	addDirector(m.Sender)
+	broadcast(m)
 }

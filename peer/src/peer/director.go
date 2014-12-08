@@ -53,3 +53,7 @@ func printDirectors() {
 		fmt.Printf("\t\t%s\n", k)
 	}
 }
+
+func nDirectors() int {
+	return len(directorMap.connected)
+}
