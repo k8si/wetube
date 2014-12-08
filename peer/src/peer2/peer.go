@@ -49,7 +49,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	testReq := "https://" + testAddr + ":3000/test"
-	http.Get(testReq)
+	if *permission == 0 {
+		testReq := "https://" + testAddr + ":3000/test"
+		fmt.Println("sending GET for: ", testReq)
+		http.Get(testReq)
+	}
 
 }
