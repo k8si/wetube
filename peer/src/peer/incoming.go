@@ -32,6 +32,7 @@ func seen(id string) bool {
 
 func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
+	sendPing()
 	d := json.NewDecoder(c)
 	for {
 		var m Message
