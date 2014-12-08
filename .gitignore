@@ -26,5 +26,7 @@ peer/bin
 peer/pkg
 peer/src/peer/id_rsa*
 peer/src/peer/cacert.pem
+peer/src/peer/invitees.txt
 peer/src/peer/peer
 peer/src/client
+peer/app/node_modules
