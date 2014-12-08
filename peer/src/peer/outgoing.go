@@ -48,7 +48,7 @@ func dial(addr string, done chan int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}} //, InsecureSkipVerify: true}
+	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
 	config.Rand = rand.Reader
 
 	//try to connect
