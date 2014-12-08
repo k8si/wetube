@@ -11,10 +11,10 @@ $(function() {
 	$('#connect-button').click(function() {
 		status = statvals['DIS'];
 		ipaddr = $('#ipaddr').val();
-		if ((ipaddr == null) || (ipaddr == '')) {
-			alert('you need to provide an ip address');
-			return;
-		}
+		// if ((ipaddr == null) || (ipaddr == '')) {
+			// alert('you need to provide an ip address');
+			// return;
+		// }
 
 		service = ipaddr;
 		// var sockurl = 'ws://'+ipaddr+':3000/ws';

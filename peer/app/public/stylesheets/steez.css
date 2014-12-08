@@ -9,6 +9,7 @@ h1 {
 	text-align: center;
 	text-transform: uppercase;
 	color: #000000;
+	width: 800px;
 	border: 12px dashed;
 	padding: 30px;
 	margin: 10px 10px 10px 10px;
@@ -21,6 +22,17 @@ h1 {
 	overflow: auto;
 	border: 1px dashed;
 }
+
+#ytplayer {
+	background-color: #FFFFFF;
+	width: 800px;
+	height: 500px;
+	overflow: auto;
+	border: 1px dashed;
+	padding: 30px;
+	margin: 10px 10px 10px 10px;
+}
+
 
 .output {
 	color: #000000;
