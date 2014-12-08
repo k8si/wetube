@@ -32,8 +32,7 @@ func seen(id string) bool {
 
 func serve(c net.Conn) {
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
-	outping.Body = "OUT:" + self
-	sendPing(outping)
+	sendPing()
 	d := json.NewDecoder(c)
 	for {
 		var m Message
@@ -69,6 +68,10 @@ func serve(c net.Conn) {
 		// 		broadcast(hi)
 		// 	}
 		case "ping":
+			fmt.Println("*** got ping for %s ***\n", m.Body)
+			// if len(m.Body) > 0 {
+			// 	go dial(m.Body, nil)
+			// }
 			go dial(m.Body, nil)
 
 		//message requesting some info about me
@@ -155,17 +158,12 @@ func theresANewDirector(m Message) {
 	broadcast(m)
 }
 
-var outping = Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
-var inping = Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
+var ping = Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
 
-func sendPing(m Message) {
-	// ping := Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
-	for _, addr := range hub.ListAddrs() {
-		m.Body = addr
-		broadcast(m)
-		if *permission == helper.DIRECTOR {
-			broadcast(welcome)
-		}
+func sendPing() {
+	for _, a := range hub.ListAddrs() {
+		fmt.Println("ping for ", a)
+		ping.Body = a
+		broadcast(ping)
 	}
-
 }

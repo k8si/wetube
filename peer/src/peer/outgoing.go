@@ -79,8 +79,7 @@ func dial(addr string, done chan int) {
 		}
 	}()
 
-	inping.Body = "IN:" + self
-	sendPing(inping)
+	sendPing()
 
 	enc := json.NewEncoder(conn)
 	for m := range ch {

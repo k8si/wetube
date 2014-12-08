@@ -64,8 +64,10 @@ func (h *Hub) List() []chan<- Message {
 
 func (h *Hub) ListAddrs() []string {
 	l := make([]string, 0)
-	for a, _ := range h.peers {
-		l = append(l, a)
+	for a, ch := range h.peers {
+		if ch != nil {
+			l = append(l, a)
+		}
 	}
 	return l
 }
