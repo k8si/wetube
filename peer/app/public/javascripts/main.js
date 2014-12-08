@@ -141,14 +141,26 @@ $(function() {
 
 	$('#pause-button').click(function() {
 		if (permission && permission < 2) sendMessage('pause');
+		else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
 	});
 
 	$('#stop-button').click(function() {
 		if (permission && permission < 2) sendMessage('stop');
+		else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
 	});
 
 	$('#load-button').click(function() {
 		if (permission && permission == 0) sendMessage('load')
+		else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
 	});
 
 

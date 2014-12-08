@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"helper"
@@ -26,11 +25,6 @@ func seen(id string) bool {
 	seenMessages.Unlock()
 	return ok
 }
-
-/*
-	newpeer := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: addr}
-	broadcast(newpeer)
-*/
 
 func serve(c net.Conn) {
 	log.SetPrefix("serve: ")
@@ -67,17 +61,6 @@ func serve(c net.Conn) {
 
 		/* ROUTES */
 		switch m.Subject {
-
-		// //try to connect to another peer
-		// case "invite":
-		// 	fmt.Printf("(< %s) serve: inviting peer @ %s\n", c.RemoteAddr(), m.Body)
-		// 	done := make(chan int)
-		// 	go dial(m.Body, done)
-		// 	if <-done == 0 {
-		// 		hi := Message{Sender: self, ID: helper.RandomID(), Subject: "msg", Body: "hi"}
-		// 		fmt.Printf("(< %s) serve: sending hi to %s\n", c.RemoteAddr(), m.Body)
-		// 		broadcast(hi)
-		// 	}
 		case "ping":
 			addr := m.Body
 			if addr == "" || len(addr) == 0 || addr == self {
@@ -95,17 +78,6 @@ func serve(c net.Conn) {
 				broadcast(response)
 				fmt.Printf("(< %s) serve: broadcasted response\n", c.RemoteAddr())
 			}
-			// } else if m.Body == "key" {
-			// 	mod, err := pubkey.N.MarshalText() //pubkey.N.String() //strconv.Itoa(pubkey.N)
-			// 	if err != nil {
-			// 		log.Fatal(err)
-			// 	}
-			// 	exp := []byte(strconv.Itoa(pubkey.E))
-			// 	st := struct{N: mod, E: exp}
-			// 	// msg := mod + "," + exp
-			// 	response := Message{Sender: self, ID: helper.RandomID(), Subject: "key", Body: st}
-			// 	broadcast(response)
-			// }
 
 		//response to my request for info
 		case "response":
@@ -123,16 +95,6 @@ func serve(c net.Conn) {
 			if len(nodeIDs.m) == n {
 				allReceived <- true
 			}
-
-		case "key":
-			fmt.Println("key")
-			// parts := strings.Split(m.Body, ",")
-			// if len(parts) != 2 {
-			// 	log.Fatal("bad public key rcvd")
-			// }
-			// nstr := parts[0]
-			// estr := parts[1]
-			// k := rsa.PublicKey{}
 
 		case "vote":
 			fmt.Printf("(< %s) serve: received vote\n", c.RemoteAddr())

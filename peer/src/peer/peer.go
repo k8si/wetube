@@ -38,15 +38,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	// "sync"
 )
 
 var (
-	// initialize   = flag.Bool("init", false, "is this the initial node?") //TODO no longer used
 	myAddr      = flag.String("ip", "", "your public ip address") //TODO this is just "self"
 	interactive = flag.Bool("i", false, "interactive mode")
-	permission  = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW")
+	permission  = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW]")
 	self        string
 	nodeID      int
 	privkey     *rsa.PrivateKey
@@ -59,6 +56,7 @@ func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
 	self = *myAddr
+
 	//configure TLS
 	cert, err := tls.LoadX509KeyPair("server_cert.pem", "server_key.pem")
 	if err != nil {
@@ -68,23 +66,17 @@ func main() {
 	config.Rand = rand.Reader
 
 	//listen on port 3000 for incoming connections
-	// service := self + ":3000"
 	listener, err := tls.Listen("tcp", ":3000", &config)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("listening on self=%s\n", self)
 
-	//set public, private keys
-	// raw, err := ioutil.ReadFile("server_key.pem")
-	raw, err := ioutil.ReadFile("keyout.der")
+	//load and set public, private keys
+	raw, err := ioutil.ReadFile("keyout.der") //DER encoded version of server_key.pem because that's what worked....
 	if err != nil {
 		log.Fatal(err)
 	}
-	// block := pem.Block{Type: "RSA PRIVATE KEY", Bytes: raw}
-	// keyblock, _ := pem.Decode(raw)
-	// rawkey := pem.EncodeToMemory(keyblock)
-	// rawkey := pem.EncodeToMemory(raw)
 	pk, err := x509.ParsePKCS1PrivateKey(raw)
 	if err != nil {
 		log.Fatal("error parsing private key: ", err)
@@ -97,19 +89,12 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			// addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
-			// cs := conn.(tls.Conn).ConnectionState
-			tlsconn, ok := conn.(*tls.Conn)
-			if ok {
-				cs := tlsconn.ConnectionState()
-				log.Println(cs)
-			}
 			go serve(conn)
 		}
 	}()
 
 	//if we're the director, invite peers in the file "invitees.txt"
-	//TODO there are probably much better way(s)
+	//TODO there are probably much better/cleaner/faster/less ghetto way(s) to do all of this.....
 	if *permission == helper.DIRECTOR {
 		takeOffice()
 		done := make(chan []string)
@@ -119,11 +104,6 @@ func main() {
 		if *interactive {
 			sendToGui("hi")
 		}
-		// for _, a := range <-done {
-		// 	if a != "" {
-		// 		fmt.Println("invited ", a)
-		// 	}
-		// }
 	}
 
 	if *interactive {
@@ -182,12 +162,10 @@ func invitePeer(addr string, perm string, done chan int) {
 		log.Fatal("bad permission in invitees.txt")
 	}
 	dialed := make(chan int)
-	// welcomed := make(chan int)
 	go dial(addr, dialed)
 	if <-dialed == 0 {
 		newID := nodeidreg.getNewID()
 		newIDstr := strconv.Itoa(newID)
-		//TODO send the new node its permission too
 		welcome := Message{ID: helper.RandomID(), Sender: self, Subject: "welcome", Body: addr + "," + newIDstr + "," + perm}
 		broadcast(welcome)
 		done <- 0
@@ -212,7 +190,12 @@ func readInput() {
 	}
 }
 
-/* "interactive mode" */
+/* "interactive mode" -- listen for messages from stdin (for debugging/fun)
+the legal messages are:
+	msg [msg] -- sends a message to the connected peers (see incoming.go)
+	list -- lists all connected peers
+	dirs -- lists all connected directors
+*/
 func readInputStdin() {
 	r := bufio.NewReader(os.Stdin)
 	for {
@@ -229,10 +212,6 @@ func readInputStdin() {
 				hub.PrintAll()
 			} else if parts[0] == "dirs" {
 				printDirectors()
-				// fmt.Printf("currently %d directors:\n", len(directorAddrs))
-				// for _, a := range directorAddrs {
-				// 	fmt.Printf("\t\t%s\n", a)
-				// }
 			} else {
 				log.Println("readInput: invalid input: input must be of form [subject]#[body]")
 			}

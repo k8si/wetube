@@ -28,5 +28,6 @@ peer/src/peer/id_rsa*
 peer/src/peer/*.pem
 peer/src/peer/invitees.txt
 peer/src/peer/peer
+peer/src/peer/old
 peer/src/client
 peer/app/node_modules
