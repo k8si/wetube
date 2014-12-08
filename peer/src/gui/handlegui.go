@@ -7,6 +7,7 @@ import (
 	// "net"
 	"flag"
 	"net/http"
+	// "strings"
 )
 
 const (
@@ -31,11 +32,19 @@ func main() {
 
 func handleInput(w http.ResponseWriter, r *http.Request) {
 	msg := r.URL.Query()["msg"][0]
+	//TODO make this smoother
+	p := r.URL.Query()["perm"][0]
+	pmsg := "perm&" + p
 	log.Printf("got input message from goclient: %s\n", msg)
+	log.Printf("have permission %s\n", p)
 	if browserConn == nil {
 		log.Fatal("websocket is nil")
 	}
-	err := websocket.Message.Send(browserConn, []byte(msg))
+	err := websocket.Message.Send(browserConn, []byte(pmsg))
+	if err != nil {
+		log.Fatalf("err sending message to jsclient: %s\n", err)
+	}
+	err = websocket.Message.Send(browserConn, []byte(msg))
 	if err != nil {
 		log.Fatalf("err sending message to jsclient: %s\n", err)
 	}

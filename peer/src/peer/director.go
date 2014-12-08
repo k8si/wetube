@@ -22,6 +22,7 @@ func takeOffice() {
 	*permission = 0
 	welcome = Message{ID: helper.RandomID(), Sender: self, Subject: "welcome"}
 	nodeidreg = NodeIDRegistry{id: 0}
+	sendToGui("perm&0")
 }
 
 func addDirector(addr string) {

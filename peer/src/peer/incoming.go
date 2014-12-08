@@ -7,6 +7,7 @@ import (
 	"helper"
 	"log"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -179,10 +180,34 @@ func theresANewDirector(m Message) {
 			}
 			*permission = perm
 			fmt.Printf("*** set permission to %d ***\n", *permission)
+			//send permission lvl to gui so user can see it
+			sendToGui("perm&" + parts[2])
+
 		}
 	}
 	addDirector(m.Sender)
 	broadcast(m)
+}
+
+/* send messages to gui */
+func sendToGui(msg string) {
+	fmt.Println("sendToGui(): got msg = ", msg)
+	p := *permission
+	fmt.Printf("have permission = %d\n", p)
+	ps := strconv.Itoa(p)
+	pm := "&perm=" + ps
+	// r := "http://localhost:4000/input?msg=" + pm
+	// _, err := http.Get(r)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+
+	fmt.Println("sending ", msg, "to gui")
+	req := "http://localhost:4000/input?msg=" + msg + pm
+	_, err := http.Get(req)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 var ping = Message{ID: helper.RandomID(), Subject: "ping"}

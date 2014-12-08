@@ -3,6 +3,7 @@ var conn;
 var host, port, service;
 var ipaddr;
 var sockport = '8080';
+var permission;
 
 statvals = {"CONN": 2, "ING": 1, "DIS": 0};
 datavals = {"SUCC": "1", "FAIL": "0"}
@@ -52,18 +53,35 @@ $(function() {
 				reader.addEventListener("loadend", function() {
 					var msg = reader.result;
 					console.log(msg)
-					if (msg == "play") {
-						$('#play-res').click();
+					switch (msg) {
+						case "play":
+							$('#play-res').click(); break;
+						case "pause":
+							$('#pause-res').click(); break;
+						case "stop":
+							$('#stop-res').click(); break;
+						case "load":
+							$('#load-res').click(); break;
+						default:
+							var parts = msg.split("&")
+							if (parts.length == 2 && parts[0] == "perm") {
+								setPermission(parts[1]);
+								permission = parseInt(parts[1]);
+							}
+							break;
 					}
-					if (msg == "pause") {
-						$('#pause-res').click();
-					}
-					if (msg == "stop") {
-						$('#stop-res').click();
-					}
-					if (msg == "load") {
-						$('#load-res').click();
-					}
+					// if (msg == "play") {
+					// 	$('#play-res').click();
+					// }
+					// if (msg == "pause") {
+					// 	$('#pause-res').click();
+					// }
+					// if (msg == "stop") {
+					// 	$('#stop-res').click();
+					// }
+					// if (msg == "load") {
+					// 	$('#load-res').click();
+					// }
 				})
 				reader.readAsText(event.data);
 			} else {
@@ -88,8 +106,14 @@ $(function() {
 		}
 	});
 
+
+
 	function setStatus(str) {
 		$('#status').text(str);
+	}
+
+	function setPermission(str) {
+		$('#permission').text(str);
 	}
 
 	function htmlEncode(str) {
@@ -108,19 +132,23 @@ $(function() {
 	}
 
 	$('#play-button').click(function() {
-		sendMessage('play');
+		if (permission != undefined && permission < 2) sendMessage('play');
+		else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
 	});
 
 	$('#pause-button').click(function() {
-		sendMessage('pause');
+		if (permission && permission < 2) sendMessage('pause');
 	});
 
 	$('#stop-button').click(function() {
-		sendMessage('stop');
+		if (permission && permission < 2) sendMessage('stop');
 	});
 
 	$('#load-button').click(function() {
-		sendMessage('load')
+		if (permission && permission == 0) sendMessage('load')
 	});
 
 

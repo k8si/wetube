@@ -106,6 +106,9 @@ func main() {
 		go readInvitees(done)
 		<-done
 		log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
+		// if *interactive {
+		// sendToGui("perm&0")
+		// }
 		// for _, a := range <-done {
 		// 	if a != "" {
 		// 		fmt.Println("invited ", a)
@@ -181,16 +184,6 @@ func invitePeer(addr string, perm string, done chan int) {
 		return
 	}
 	done <- 1
-}
-
-/* send messages to gui */
-func sendToGui(msg string) {
-	fmt.Println("sending ", msg, "to gui")
-	req := "http://localhost:4000/input?msg=" + msg
-	_, err := http.Get(req)
-	if err != nil {
-		log.Println(err)
-	}
 }
 
 /* listen for messages from gui */
