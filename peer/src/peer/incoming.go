@@ -161,9 +161,13 @@ func theresANewDirector(m Message) {
 var ping = Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
 
 func sendPing() {
-	for _, a := range hub.ListAddrs() {
-		fmt.Println("ping for ", a)
-		ping.Body = a
-		broadcast(ping)
+	if hub.Size() > 0 {
+		for _, a := range hub.ListAddrs() {
+			log.Println("ping: address ", a)
+			ping.Body = a
+			broadcast(ping)
+		}
+	} else {
+		fmt.Println("ping: no peers connected.")
 	}
 }

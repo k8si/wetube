@@ -78,3 +78,7 @@ func (h *Hub) PrintAll() {
 		fmt.Printf("\t\t%s\n", k)
 	}
 }
+
+func (h *Hub) Size() int {
+	return len(h.peers)
+}
