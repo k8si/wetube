@@ -72,7 +72,8 @@ func dial(addr string, done chan int) {
 	log.Println("got hostname: ", hostname)
 
 	// //configure tls
-	config := tls.Config{ServerName: hostname[0], InsecureSkipVerify: true} // I could not get this work
+	// config := tls.Config{ServerName: hostname[0], InsecureSkipVerify: true} // I could not get this work
+	config := tls.Config{InsecureSkipVerify: true} // I could not get this work
 
 	//try to connect
 	fmt.Printf("(> %s) dial: dialing port 3000...\n", addr)
