@@ -70,7 +70,7 @@ func serve(c net.Conn) {
 		case "ping":
 			fmt.Printf("*** got ping for %s ***\n", m.Body)
 			//if we try to dial an empty address we end up dialing 127.0.0.1
-			if len(m.Body) > 0 {
+			if len(m.Body) > 0 && m.Body != self {
 				go dial(m.Body, nil)
 			}
 
