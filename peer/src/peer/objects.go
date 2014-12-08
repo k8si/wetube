@@ -62,6 +62,14 @@ func (h *Hub) List() []chan<- Message {
 	return l
 }
 
+func (h *Hub) ListAddrs() []string {
+	l := make([]string, 0)
+	for a, _ := range h.peers {
+		l = append(l, a)
+	}
+	return l
+}
+
 func (h *Hub) PrintAll() {
 	// fmt.Println("hub connected to:")
 	for k, _ := range h.peers {

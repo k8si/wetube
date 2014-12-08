@@ -67,6 +67,8 @@ func dial(addr string, done chan int) {
 		done <- 0
 	}
 
+	sendPing()
+
 	defer func() {
 		checkAddr := strings.Split(conn.RemoteAddr().String(), ":")[0]
 		fmt.Printf("(> %s) dial: connection closed.\n", conn.RemoteAddr())

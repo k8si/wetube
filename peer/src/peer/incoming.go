@@ -66,6 +66,8 @@ func serve(c net.Conn) {
 		// 		fmt.Printf("(< %s) serve: sending hi to %s\n", c.RemoteAddr(), m.Body)
 		// 		broadcast(hi)
 		// 	}
+		case "ping":
+			go dial(m.Body, nil)
 
 		//message requesting some info about me
 		case "request":
@@ -147,4 +149,12 @@ func theresANewDirector(m Message) {
 	}
 	addDirector(m.Sender)
 	broadcast(m)
+}
+
+func sendPing() {
+	ping := Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
+	for _, addr := range hub.ListAddrs() {
+		ping.Body = addr
+		broadcast(ping)
+	}
 }
