@@ -32,20 +32,20 @@ After you're done with everything, or if you want to start over, you can run `./
 # Probable Problems
 
 * If you're running wetube on a remote host e.g. EC2, you can't visit "localhost:4000" and get the server -- you have to visit "[EC2-IP]:4000". Since the websockets URL is hardcoded into Javascript, this messes up the GUI and causes errors. *(TODO explanation)*
-* If you're running on EC2, sometimes ExpressJS doesn't work mysteriously -- see [this](http://iws.io/hosting-a-nodejs-express-application-on-amazon-web-services-ec2/), you have to do the parts about `nvm` for some reason.
+* If you're running on EC2, sometimes ExpressJS *mysteriously* doesn't work -- see [this](http://iws.io/hosting-a-nodejs-express-application-on-amazon-web-services-ec2/), you have to do the parts about `nvm` for some reason.
 * I can't `npm install` anything on the edlab machines. Maybe there's a way, I'm too tired to figure it out.
 * During `./build.sh`, the edlab machines throw this error:
 
-go building...
-/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
-command-line-arguments
-# command-line-arguments
-./director.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/helper.a: not a package file
-/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
-command-line-arguments
-# command-line-arguments
-./handlegui.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/golang.org/x/net/websocket.a: not a package file
-/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+			go building...
+			/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+			command-line-arguments
+			# command-line-arguments
+			./director.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/helper.a: not a package file
+			/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
+			command-line-arguments
+			# command-line-arguments
+			./handlegui.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/golang.org/x/net/websocket.a: not a package file
+			/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
 
 but no on else does.
 
