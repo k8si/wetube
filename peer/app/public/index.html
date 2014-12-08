@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>wetube</title>
+	<link rel="stylesheet" type="text/css" href="stylesheets/steez.css" />
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+	<script type="text/javascript" src="javascripts/main.js"></script>
+	<script type="text/javascript" src="javascripts/swfobject.js"></script>
+</head>
+<body>
+	<h1>wetube</h1>
+
+
+	<div id="connect">
+		<div>what's your ip address? <input type="text" value="" name="ipaddr" id="ipaddr" /></div>
+		<div><input type="button" value="connect" id="connect-button" class="button"/></div>
+		status: <div id="status">disconnected</div>
+	</div>
+
+	<!-- <div id="console"></div> -->
+	<div id="ytplayer">
+video goes here
+	</div>
+
+	<script type="text/javascript">
+	// var params = { allowScriptAccess: "always" };
+	// swfobject.embedSWF("http://www.youtube.com/v/tFI7JAybF6E&enablejsapi=1&playerapiid=ytplayer", "ytplayer", "425", "365", "8", null, null, params);
+	function play(){ if(ytplayer) ytplayer.playVideo();}
+	function pause(){ if(ytplayer) ytplayer.pauseVideo(); }
+	function stop(){ if(ytplayer) ytplayer.stopVideo(); }
+	function loadNewVideo(id){ if (ytplayer) ytplayer.loadVideoById(id, 0); }
+	</script>
+
+	<div>
+		<a href="javascript:void(0);" onclick="play();" id="play-res">
+			<input type="button" value="play" id="play-button" class="ctrl"/>
+		</a>
+	</div>
+	<div>
+		<a href="javascript:void(0);" onclick="pause();" id="pause-res">
+			<input type="button" value="pause" id="pause-button" class="ctrl"/>
+		</a>
+	</div>
+	<div>
+		<a href="javascript:void(0);" onclick="stop();" id="stop-res">
+			<input type="button" value="stop" id="stop-button" class="ctrl"/>
+		</a>
+	</div>
+	<div>
+		<a href="javascript:void(0);" onclick="loadNewVideo('4kQnrKvOTNg');" id="load-res">
+			<input type="button" value="load" id="load-button" class="ctrl"/>
+		</a>
+	</div>
+
+</body>
+</html>

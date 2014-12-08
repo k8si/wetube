@@ -144,7 +144,7 @@ func serve(c net.Conn) {
 
 		case "msg":
 			broadcast(m)
-			// sendToGui(m.Body)
+			sendToGui(m.Body)
 
 		case "welcome", "newdirector":
 			theresANewDirector(m)
