@@ -28,10 +28,12 @@ func addDirector(addr string) {
 	fmt.Printf("*** adding director @ %s. ***\n", addr)
 	// other peers could be declaring themselves director at this very moment
 	directorMap.mu.Lock()
-	defer directorMap.mu.Unlock()
-	if ok := directorMap.connected[addr]; ok {
+	ok := directorMap.connected[addr]
+	if !ok {
 		directorMap.connected[addr] = true
 	}
+	directorMap.mu.Unlock()
+	printDirectors()
 }
 
 func removeDirector(checkAddr string) {
@@ -41,6 +43,8 @@ func removeDirector(checkAddr string) {
 		delete(directorMap.connected, checkAddr)
 	}
 	directorMap.mu.Unlock()
+	printDirectors()
+
 }
 
 func printDirectors() {
