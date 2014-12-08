@@ -12,7 +12,7 @@ WETUBE
 
 **NOTE** `start.sh` will start the GUI, the http server, and the Wetube client as background processes (it prints the PID for each). If you for some reason should want to stop any of these components, you'll have to `kill [pid]`. Alternatively, you could just run the relevant commands in separate windows (which may be easier anyhow):
 
-			./wetube [your-public-ip-addr]
+			./wetube --ip=[your-public-ip-addr]
 			./gui
 			DEBUG=app $WETUBE_ROOT/peer/app/bin/www
 
@@ -26,8 +26,31 @@ After you're done with everything, or if you want to start over, you can run `./
 
 # Kicking the Tires
 
-### invitees.txt
-(TODO)
+### Initializing the Network
+
+In order to initialize the wetube network, the first director node expects a file called `invitees.txt` that looks something like:
+
+			173.194.123.3
+			173.194.123.9 1
+			173.194.123.14 2
+			...
+
+where permission levels range between 0 = director, 1 = editor, 2 = viewer. In order to create this initial director node, from `WETUBE_ROOT` call:
+
+			./wetube --ip=[my ip address] --perm=0 --invite=[path/to/invitees.txt]
+
+
+### Interactive Mode
+
+If you're running wetube peer on a remote host and for some reason you don't feel like controlling it via the browser, you can start your node in "interactive mode" instead:
+
+			./wetube --ip=[my ip address] --interactive=true
+
+Interactive mode allows you to send messages and list currently connected peers/directors via stdin. The valid commands are:
+
+			msg [message]  #send a message to connected peers e.g. "msg play", "msg pause"
+			list  #lists all currently connected peers
+			dirs  #lists all currently connected directors
 
 # Probable Problems
 
