@@ -32,7 +32,6 @@ func main() {
 	flag.Parse()
 	self = *myAddr
 
-	testAddr := helper.EC2
 	// //configure TLS
 	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
 	// if err != nil {
@@ -40,19 +39,55 @@ func main() {
 	// }
 	// config := tls.Config{Certificates: []tls.Certificate{cert}}
 	// config.Rand = rand.Reader
-	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("got test")
-	})
+	// http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Println("got test")
+	// })
 
-	err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	log.Println("hi from main")
+	go func() {
+		if err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil); err != nil {
+			log.Panic(err)
+		}
+	}()
+	ch := make(chan bool)
+	<-ch
+
+	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Println("got ROOT")
+	// })
+	// http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Println("got test")
+	// })
+	// log.Println("setting up server")
+	// err := http.ListenAndServeTLS(":3000", "cacert.pem", "id_rsa", nil)
+	// if err != nil {
+	// 	fmt.Println("there was an error")
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("listening on :3000")
 
 	if *permission == 0 {
-		testReq := "https://" + testAddr + ":3000/test"
-		fmt.Println("sending GET for: ", testReq)
-		http.Get(testReq)
+		done := make(chan int)
+		go sendReq(done)
+		<-done
+		fmt.Println("got response")
 	}
+}
 
+func sendReq(out chan int) {
+	fmt.Println("sending req")
+	testAddr := helper.EC2
+	testReq := "https://" + testAddr + ":3000/test"
+	fmt.Println("sending GET for: ", testReq)
+	_, err := http.Get(testReq)
+	if err != nil {
+		fmt.Println("GET: error")
+		out <- 1
+	}
+	out <- 0
 }
