@@ -68,11 +68,21 @@ func serve(c net.Conn) {
 		// 		broadcast(hi)
 		// 	}
 		case "ping":
-			fmt.Printf("*** got ping for %s ***\n", m.Body)
-			//if we try to dial an empty address we end up dialing 127.0.0.1
-			if len(m.Body) > 0 && m.Body != self {
-				go dial(m.Body, nil)
+			addr := m.Body
+			if addr == "" {
+				log.Printf("bad ping: %s == [empty string]\n", addr)
+				continue
 			}
+			if len(addr) == 0 {
+				log.Printf("bad ping: len(%s) == 0\n", addr)
+				continue
+			}
+			if addr == self {
+				log.Printf("bad ping: %s == self\n", addr)
+				continue
+			}
+			fmt.Printf("*** got ping for %s ***\n", m.Body)
+			log.Printf("good ping: %s. about to dial.", addr)
 
 		//message requesting some info about me
 		case "request":
