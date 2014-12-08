@@ -72,7 +72,7 @@ func main() {
 	k := cryptostuff.GenKeypair()
 	// kb := x509.MarshalPKCS1PrivateKey(k)
 	cryptostuff.WriteKeypair(k)
-	certbytes := cryptostuff.GenX509Cert(*k)
+	certbytes := cryptostuff.GenX509Cert(k)
 	cryptostuff.WriteCert(certbytes)
 	// cert, err := tls.X509KeyPair(certbytes, kb)
 

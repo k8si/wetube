@@ -7,10 +7,11 @@ import (
 	"crypto/x509/pkix"
 	// "encoding/gob"
 	// "encoding/pem"
-	"fmt"
+	// "fmt"
 	"io/ioutil"
 	"math/big"
 	// "os"
+	"log"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func GenKeypair() *rsa.PrivateKey {
 	// generate private key
 	privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	return privatekey
 }
@@ -46,21 +47,21 @@ func WriteKeypair(k *rsa.PrivateKey) {
 	// save private key
 	pkey := x509.MarshalPKCS1PrivateKey(k)
 	ioutil.WriteFile("../peer/private.key", pkey, 0777)
-	fmt.Println("private key saved to private.key")
+	log.Println("private key saved to private.key")
 
 	// save public key
 	pubkey, _ := x509.MarshalPKIXPublicKey(k.PublicKey)
 	ioutil.WriteFile("../peer/public.key", pubkey, 0777)
-	fmt.Println("public key saved to public.key")
+	log.Println("public key saved to public.key")
 }
 
-func GenX509Cert(privatekey rsa.PrivateKey) []byte {
+func GenX509Cert(privatekey *rsa.PrivateKey) []byte {
 	parent := GenTemplate()
 	template := parent
 	publickey := &privatekey.PublicKey
 	cert, err := x509.CreateCertificate(rand.Reader, template, parent, publickey, privatekey)
 	if err != nil {
-		fmt.Println(err)
+		log.Panicln(err)
 	}
 	return cert
 }
