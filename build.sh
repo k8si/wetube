@@ -6,6 +6,7 @@ echo "this-computer's.hostname: run 'host [your.public.ip.addr]'"
 export WETUBE_ROOT=$PWD
 export GOPATH=$WETUBE_ROOT/peer
 echo "go building..."
+go get golang.org/x/net/websocket
 cd $GOPATH/src/helper
 go build
 go install
