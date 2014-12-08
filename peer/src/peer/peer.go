@@ -26,7 +26,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
+	// "crypto/x509"
 	"cryptostuff"
 	"flag"
 	"fmt"
@@ -70,11 +70,12 @@ func main() {
 	//configure TLS
 	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
 	k := cryptostuff.GenKeypair()
-	kb := x509.MarshalPKCS1PrivateKey(k)
-	certbytes := cryptostuff.GenX509Cert(*k)
-	cert, err := tls.X509KeyPair(certbytes, kb)
+	// kb := x509.MarshalPKCS1PrivateKey(k)
+	cryptostuff.WriteKeypair(k)
+	// certbytes := cryptostuff.GenX509Cert(*k)
+	// cert, err := tls.X509KeyPair(certbytes, kb)
 
-	// cert, err := tls.LoadX509KeyPair("certpem.pem", "private.key")
+	cert, err := tls.LoadX509KeyPair("public.key", "private.key")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }

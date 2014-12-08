@@ -8,7 +8,7 @@ import (
 	// "encoding/gob"
 	// "encoding/pem"
 	"fmt"
-	// "io/ioutil"
+	"io/ioutil"
 	"math/big"
 	// "os"
 	"time"
@@ -40,6 +40,18 @@ func GenKeypair() *rsa.PrivateKey {
 		fmt.Println(err)
 	}
 	return privatekey
+}
+
+func WriteKeypair(k *rsa.PrivateKey) {
+	// save private key
+	pkey := x509.MarshalPKCS1PrivateKey(k)
+	ioutil.WriteFile("../peer/private.key", pkey, 0777)
+	fmt.Println("private key saved to private.key")
+
+	// save public key
+	pubkey, _ := x509.MarshalPKIXPublicKey(k.PublicKey)
+	ioutil.WriteFile("../peer/public.key", pubkey, 0777)
+	fmt.Println("public key saved to public.key")
 }
 
 func GenX509Cert(privatekey rsa.PrivateKey) []byte {
