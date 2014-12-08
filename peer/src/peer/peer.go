@@ -26,16 +26,19 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
-	// "crypto/x509"
+	"crypto/x509"
 	// "cryptostuff"
+	// "encoding/pem"
 	"flag"
 	"fmt"
 	"helper"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
 	// "sync"
 )
 
@@ -51,16 +54,6 @@ var (
 )
 
 var hub = &Hub{peers: make(map[string]chan<- Message)}
-
-var keystore = struct {
-	m map[string]*rsa.PublicKey
-}{m: make(map[string]*rsa.PublicKey)}
-
-func addkey(addr string, k *rsa.PublicKey) {
-	if _, ok := keystore.m[addr]; !ok {
-		keystore.m[addr] = k
-	}
-}
 
 func main() {
 	//specify initialization with cmdline arg for now
@@ -81,6 +74,23 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("listening on self=%s\n", self)
+
+	//set public, private keys
+	// raw, err := ioutil.ReadFile("server_key.pem")
+	raw, err := ioutil.ReadFile("keyout.der")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// block := pem.Block{Type: "RSA PRIVATE KEY", Bytes: raw}
+	// keyblock, _ := pem.Decode(raw)
+	// rawkey := pem.EncodeToMemory(keyblock)
+	// rawkey := pem.EncodeToMemory(raw)
+	pk, err := x509.ParsePKCS1PrivateKey(raw)
+	if err != nil {
+		log.Fatal("error parsing private key: ", err)
+	}
+	privkey = pk
+
 	go func() {
 		for {
 			conn, err := listener.Accept()
@@ -106,9 +116,9 @@ func main() {
 		go readInvitees(done)
 		<-done
 		log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
-		// if *interactive {
-		// sendToGui("perm&0")
-		// }
+		if *interactive {
+			sendToGui("hi")
+		}
 		// for _, a := range <-done {
 		// 	if a != "" {
 		// 		fmt.Println("invited ", a)

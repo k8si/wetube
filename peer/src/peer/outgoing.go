@@ -3,6 +3,7 @@ package main
 import (
 	// "crypto/rand"
 	// "bufio"
+	"crypto/rsa"
 	"crypto/tls"
 	// "crypto/x509"
 	// "crypto/x509/pkix"
@@ -12,7 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	// "math/big"
-	"net"
+	// "net"
 	// "os"
 	"strings"
 	// "time"
@@ -20,6 +21,7 @@ import (
 
 func broadcast(msg Message) {
 	log.SetPrefix("broadcast: ")
+	// msg.sign()
 	log.Printf("broadcasting: subject=%s, body=%s", msg.Subject, msg.Body)
 	for _, ch := range hub.List() {
 		select {
@@ -49,32 +51,16 @@ func dial(addr string, done chan int) {
 
 	defer hub.Remove(addr)
 
-	// // tcpAddrstr := addr + ":" + helper.TCP_PORT
-	// // tcpAddr, err := net.ResolveTCPAddr("tcp", tcpAddrstr)
-	// // if err != nil {
-	// // 	log.Fatal(err)
-	// // }
-	// raddr := &net.TCPAddr{IP: net.ParseIP(addr), Port: 3000, Zone: ""}
-	// laddr := &net.TCPAddr{IP: net.ParseIP(self), Port: 3000, Zone: ""}
-	// c, err := net.DialTCP("tcp", laddr, raddr)
+	// hostname, err := net.LookupAddr(addr)
 	// if err != nil {
-	// 	fmt.Println("dial error")
+	// 	log.Println("err looking up hostname for ", addr)
 	// 	log.Fatal(err)
 	// }
-	// config := tls.Config{ServerName: self}
-	// config.Rand = rand.Reader
-	// conn := tls.Client(c, &config)
-	hostname, err := net.LookupAddr(addr)
-	if err != nil {
-		log.Println("err looking up hostname for ", addr)
-		log.Fatal(err)
-	}
-	log.Println("got hostname: ", hostname)
+	// log.Println("got hostname: ", hostname)
 
 	// //configure tls
-	// config := tls.Config{ServerName: hostname[0], InsecureSkipVerify: true} // I could not get this work
-	config := tls.Config{InsecureSkipVerify: true} // I could not get this work
-
+	// config := tls.Config{ServerName: hostname[0], InsecureSkipVerify: true} // I could not get this work without InsecureSkipVerify
+	config := tls.Config{InsecureSkipVerify: true}
 	//try to connect
 	fmt.Printf("(> %s) dial: dialing port 3000...\n", addr)
 	tcpAddr := addr + ":" + helper.TCP_PORT
@@ -82,7 +68,7 @@ func dial(addr string, done chan int) {
 
 	if err != nil {
 		fmt.Printf("(> %s) dial: dial error: %s\n", addr, err)
-		//TODO add retries
+		//TODO add retries somehow
 		if done != nil {
 			done <- 1
 		}
@@ -93,6 +79,28 @@ func dial(addr string, done chan int) {
 	if done != nil {
 		done <- 0
 	}
+
+	cs := conn.ConnectionState()
+	ncerts := len(cs.PeerCertificates)
+	fmt.Println("num peer certs: ", ncerts)
+	if ncerts == 1 {
+		pcert := cs.PeerCertificates[0]
+		pubkey := pcert.PublicKey.(*rsa.PublicKey)
+		addkey(addr, pubkey)
+	}
+
+	// tlsconn, ok := conn.(*tls.Conn)
+	// if ok {
+	// 	cs := tlsconn.ConnectionState()
+	// 	fmt.Println(len(cs.PeerCertificates))
+	// }
+	// // addr := strings.Split(conn.RemoteAddr().String(), ":")[0]
+	// // cs := conn.(tls.Conn).ConnectionState
+	// tlsconn, ok := conn.(*tls.Conn)
+	// if ok {
+	// 	cs := tlsconn.ConnectionState()
+	// 	log.Println(cs)
+	// }
 
 	defer func() {
 		checkAddr := strings.Split(conn.RemoteAddr().String(), ":")[0]
@@ -110,6 +118,7 @@ func dial(addr string, done chan int) {
 
 	enc := json.NewEncoder(conn)
 	for m := range ch {
+		m.sign()
 		err := enc.Encode(m)
 		if err != nil {
 			fmt.Printf("(> %s) dial: error: %s\n", conn.RemoteAddr(), err)
@@ -117,19 +126,6 @@ func dial(addr string, done chan int) {
 		}
 	}
 }
-
-// func genCert(): x509.Certificate {
-// 	template := x509.Certificate{}
-// 	lim := new(big.Int).Lsh(big.NewInt(1), 128)
-// 	serialno, err := rand.Int(rand.Reader, lim)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	template.SerialNumber = serialno
-// 	template.Subject = pkix.Name{Organization: []string{"whatevz"}}
-// 	c, err := x509.CreateCertificate(rand.Reader, &template, &template, )
-
-// }
 
 func readInCert() []byte {
 	b, err := ioutil.ReadFile("cert.pem")

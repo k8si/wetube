@@ -5,10 +5,32 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
+	// "encoding/hex"
 	"fmt"
+	// "io"
 	"log"
 	"sync"
 )
+
+var keystore = struct {
+	m map[string]*rsa.PublicKey
+	sync.Mutex
+}{m: make(map[string]*rsa.PublicKey)}
+
+func addkey(addr string, k *rsa.PublicKey) {
+	keystore.Lock()
+	defer keystore.Unlock()
+	if _, ok := keystore.m[addr]; !ok {
+		keystore.m[addr] = k
+	}
+}
+
+func getkey(addr string) *rsa.PublicKey {
+	if _, ok := keystore.m[addr]; ok {
+		return keystore.m[addr]
+	}
+	return nil
+}
 
 type Message struct {
 	ID        string
@@ -18,19 +40,43 @@ type Message struct {
 	Signature []byte
 }
 
-func (m *Message) sign() {
-	// h := md5.Sum([]byte(m.Body))
-	hf := md5.New()
-	h := hf.Sum([]byte(m.Body))
-	s, err := rsa.SignPKCS1v15(rand.Reader, privkey, crypto.MD5, h)
-	if err != nil {
-		log.Panic(err)
-	}
-	m.Signature = s
+func (m *Message) String() string {
+	s := m.ID + m.Sender + m.Subject + m.Body
+	return s
 }
 
-func (m *Message) verify() {
-	// err := rsa.VerifyPKCS1v15()
+func (m *Message) Hash() []byte {
+	hasher := md5.New()
+	hasher.Write([]byte(m.String()))
+	return hasher.Sum(nil)
+}
+
+func (m *Message) sign() {
+	if privkey != nil {
+		hashed := m.Hash()
+		s, err := rsa.SignPKCS1v15(rand.Reader, privkey, crypto.MD5, hashed)
+		if err != nil {
+			log.Panic(err)
+		}
+		m.Signature = s
+	} else {
+		log.Fatal("no private key found")
+	}
+}
+
+func (m *Message) verify() bool {
+	pubkey := getkey(m.Sender)
+	if pubkey == nil {
+		log.Println("no public key found for addr ", m.Sender)
+		return false
+	}
+	hashed := m.Hash()
+	err := rsa.VerifyPKCS1v15(pubkey, crypto.MD5, hashed, m.Signature)
+	if err != nil {
+		log.Println("message verification failure: ", err)
+		return false
+	}
+	return true
 }
 
 //used for voting

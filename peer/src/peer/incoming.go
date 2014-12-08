@@ -41,6 +41,7 @@ func serve(c net.Conn) {
 	for {
 		var m Message
 		err := d.Decode(&m)
+
 		if err != nil {
 			log.Printf("(< %s) serve: error: %s\n", c.RemoteAddr(), err)
 			break
@@ -55,6 +56,12 @@ func serve(c net.Conn) {
 		}
 
 		fmt.Printf("(< %v) serve: RCVD: id=%s sender=%s subj=%s body=%s\n", c.RemoteAddr(), m.ID, m.Sender, m.Subject, m.Body)
+
+		verified := m.verify()
+		if !verified {
+			fmt.Println("failed to verify message")
+			continue
+		}
 
 		go dial(m.Sender, nil)
 
