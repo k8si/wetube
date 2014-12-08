@@ -65,6 +65,10 @@ func GenX509Cert(privatekey rsa.PrivateKey) []byte {
 	return cert
 }
 
+func WriteCert(cert []byte) {
+	ioutil.WriteFile("../peer/cert.pem", cert, 0777)
+}
+
 // func main() {
 
 // 	// ok, lets populate the certificate with some data
