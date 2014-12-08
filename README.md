@@ -30,21 +30,21 @@ After you're done with everything, or if you want to start over, you can run `./
 
 In order to initialize the wetube network, the first director node expects a file called `invitees.txt` that looks something like:
 
-			173.194.123.3
-			173.194.123.9 1
-			173.194.123.14 2
+			173.194.123.3 1
+			173.194.123.9 2
+			173.194.123.14 1
 			...
 
-where permission levels range between 0 = director, 1 = editor, 2 = viewer. In order to create this initial director node, from `WETUBE_ROOT` call:
+where the first column contains the public IP addresses of peers to invite and the second column contains a permission level, which can range between 0 = director, 1 = editor, 2 = viewer. In order to create this initial director node, from `WETUBE_ROOT` call:
 
-			./wetube --ip=[my ip address] --perm=0 --invite=[path/to/invitees.txt]
+			./wetube --ip=[your ip address] --permission=0 --invite=[path/to/invitees.txt]
 
 
 ### Interactive Mode
 
 If you're running wetube peer on a remote host and for some reason you don't feel like controlling it via the browser, you can start your node in "interactive mode" instead:
 
-			./wetube --ip=[my ip address] --interactive=true
+			./wetube --ip=[your ip address] --interactive=true
 
 Interactive mode allows you to send messages and list currently connected peers/directors via stdin. The valid commands are:
 
@@ -71,6 +71,11 @@ Interactive mode allows you to send messages and list currently connected peers/
 			/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
 
 but no on else does.
+
+# References
+
+* https://code.google.com/p/whispering-gophers/source/browse/master/main.go
+* https://gist.github.com/spikebike/2232102
 
 
 
