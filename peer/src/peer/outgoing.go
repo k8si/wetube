@@ -12,6 +12,7 @@ import (
 )
 
 func broadcast(msg Message) {
+	log.SetPrefix("broadcast: ")
 	log.Printf("broadcasting: subject=%s, body=%s", msg.Subject, msg.Body)
 	for _, ch := range hub.List() {
 		select {
@@ -27,6 +28,7 @@ func broadcast(msg Message) {
 // }
 
 func dial(addr string, done chan int) {
+	log.SetPrefix("dial: ")
 	if addr == self {
 		return //dont dial self
 	}

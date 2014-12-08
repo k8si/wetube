@@ -31,6 +31,7 @@ func seen(id string) bool {
 */
 
 func serve(c net.Conn) {
+	log.SetPrefix("serve: ")
 	fmt.Printf("(< %s) serve: accepted connection.\n", c.RemoteAddr())
 	sendPing()
 	d := json.NewDecoder(c)
@@ -50,7 +51,7 @@ func serve(c net.Conn) {
 			continue
 		}
 
-		fmt.Printf("(< %v) serve: RCVD: %v\n", c.RemoteAddr(), m)
+		fmt.Printf("(< %v) serve: RCVD: id=%s sender=%s subj=%s body=%s\n", c.RemoteAddr(), m.ID, m.Sender, m.Subject, m.Body)
 
 		go dial(m.Sender, nil)
 
@@ -69,20 +70,12 @@ func serve(c net.Conn) {
 		// 	}
 		case "ping":
 			addr := m.Body
-			if addr == "" {
-				log.Printf("bad ping: %s == [empty string]\n", addr)
-				continue
+			if addr == "" || len(addr) == 0 || addr == self {
+				log.Printf("bad ping: %s\n", addr)
+			} else {
+				fmt.Printf("*** got ping for %s ***\n", m.Body)
+				log.Printf("good ping: %s. about to dial.", addr)
 			}
-			if len(addr) == 0 {
-				log.Printf("bad ping: len(%s) == 0\n", addr)
-				continue
-			}
-			if addr == self {
-				log.Printf("bad ping: %s == self\n", addr)
-				continue
-			}
-			fmt.Printf("*** got ping for %s ***\n", m.Body)
-			log.Printf("good ping: %s. about to dial.", addr)
 
 		//message requesting some info about me
 		case "request":
@@ -147,6 +140,7 @@ func serve(c net.Conn) {
 }
 
 func theresANewDirector(m Message) {
+	log.SetPrefix("serve: ")
 	parts := strings.Split(m.Body, ",")
 	//this is the first director and this info is targeted at this node
 	if len(parts) == 3 {
@@ -168,10 +162,12 @@ func theresANewDirector(m Message) {
 	broadcast(m)
 }
 
-var ping = Message{ID: helper.RandomID(), Sender: self, Subject: "ping"}
+var ping = Message{ID: helper.RandomID(), Subject: "ping"}
 
 func sendPing() {
+	log.SetPrefix("sendPing: ")
 	if hub.Size() > 0 {
+		ping.Sender = self
 		for _, a := range hub.ListAddrs() {
 			log.Println("ping: address ", a)
 			ping.Body = a

@@ -48,6 +48,7 @@ var (
 var hub = &Hub{peers: make(map[string]chan<- Message)}
 
 func main() {
+	log.SetPrefix("main: ")
 	//specify initialization with cmdline arg for now
 	flag.Parse()
 	self = *myAddr
@@ -102,6 +103,7 @@ func main() {
 }
 
 func readInvitees(done chan []string) {
+	log.SetPrefix("invite: ")
 	//map of {address: permission} read from "invitees.txt"
 	invited := make(map[string]chan int)
 	numpeers := 0
@@ -138,8 +140,10 @@ func readInvitees(done chan []string) {
 }
 
 func invitePeer(addr string, perm string, done chan int) {
+	log.SetPrefix("invite: ")
 	if addr == self {
 		done <- 0
+		return
 	}
 	fmt.Println("inviting ", addr)
 	check, err := strconv.Atoi(perm)
@@ -156,6 +160,7 @@ func invitePeer(addr string, perm string, done chan int) {
 		welcome := Message{ID: helper.RandomID(), Sender: self, Subject: "welcome", Body: addr + "," + newIDstr + "," + perm}
 		broadcast(welcome)
 		done <- 0
+		return
 	}
 	done <- 1
 }

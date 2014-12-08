@@ -19,6 +19,7 @@ var nodeIDs = struct {
 }{m: make(map[string]int)}
 
 func electNewDirector() {
+	log.SetPrefix("elect: ")
 	log.Println("*** starting election ***")
 	n := len(hub.List())
 	log.Println("connected to ", n, "peers")
