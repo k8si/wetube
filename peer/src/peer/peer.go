@@ -48,13 +48,13 @@ var (
 var hub = &Hub{peers: make(map[string]chan<- Message)}
 
 func main() {
-	log.SetPrefix("main: ")
 	//specify initialization with cmdline arg for now
 	flag.Parse()
 	self = *myAddr
 
 	//configure TLS
-	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
+	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
+	cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
 	if err != nil {
 		log.Fatal(err)
 	}

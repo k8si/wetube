@@ -43,11 +43,12 @@ func dial(addr string, done chan int) {
 	defer hub.Remove(addr)
 
 	//configure tls
-	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
+	// cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
+	cert, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
 	if err != nil {
 		log.Fatal(err)
 	}
-	config := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
+	config := tls.Config{Certificates: []tls.Certificate{cert}} //, InsecureSkipVerify: true}
 	config.Rand = rand.Reader
 
 	//try to connect
