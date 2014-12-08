@@ -139,7 +139,7 @@ func serve(c net.Conn) {
 func theresANewDirector(m Message) {
 	parts := strings.Split(m.Body, ",")
 	//this is the first director and this info is targeted at this node
-	if len(parts) == 2 {
+	if len(parts) == 3 {
 		if nDirectors() == 0 && parts[0] == self {
 			nid, err := strconv.Atoi(parts[1])
 			if err != nil {
