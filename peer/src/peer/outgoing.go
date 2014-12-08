@@ -72,27 +72,7 @@ func dial(addr string, done chan int) {
 		fmt.Printf("(> %s) dial: connection closed.\n", conn.RemoteAddr())
 		conn.Close()
 		hub.PrintAll()
-		newdirs := make([]string, 0)
-		for _, a := range directorAddrs {
-			if checkAddr != a {
-				newdirs = append(newdirs, a)
-			}
-		}
-		if len(newdirs) == 0 {
-			fmt.Printf("(> %s) dial: all directors have left.\n", checkAddr)
-			go electNewDirector()
-		} else {
-			directorAddrs = newdirs
-			fmt.Printf("(> %s) dial: %d directors left:\n", checkAddr, len(newdirs))
-			for _, a := range directorAddrs {
-				fmt.Printf("\t\t%s\n", a)
-			}
-		}
-
-		// if checkAddr == directorAddr {
-		// fmt.Printf("(> %s) dial: director has left.\n", checkAddr)
-		// go electNewDirector()
-		// }
+		updateDirectors(checkAddr)
 	}()
 
 	enc := json.NewEncoder(conn)
@@ -105,24 +85,21 @@ func dial(addr string, done chan int) {
 	}
 }
 
-// if err != nil {
-// 	ch := make(chan *tls.Conn)
-// 	go func(a string, c tls.Config, done chan *tls.Conn) {
-// 		for numtries := 0; numtries < 2; numtries += 1 {
-// 			fmt.Printf("(> %s) dial: dial error: %s. waiting...\n", a, err)
-// 			time.Sleep(time.Duration(10) * time.Second)
-// 			fmt.Printf("(> %s) dial: dial error: %s. retrying...\n", a, err)
-// 			conn, err = tls.Dial("tcp", a, &c)
-// 			if err != nil {
-// 				numtries += 1
-// 				continue
-// 			}
-// 			done <- conn
-// 		}
-// 		done <- nil
-// 	}(tcpAddr, config, ch)
-// 	conn = <-ch
-// 	if conn == nil {
-// 		log.Fatal("couldnt get conn")
-// 	}
-// }
+func updateDirectors(checkAddr string) {
+	newdirs := make([]string, 0)
+	for _, a := range directorAddrs {
+		if checkAddr != a {
+			newdirs = append(newdirs, a)
+		}
+	}
+	fmt.Printf("*** %d directors remaining: ***\n", checkAddr, len(newdirs))
+	for _, a := range newdirs {
+		fmt.Printf("\t\t%s\n", a)
+	}
+	if len(newdirs) == 0 {
+		fmt.Printf("(> %s) dial: all directors have left.\n", checkAddr)
+		go electNewDirector()
+	} else {
+		directorAddrs = newdirs
+	}
+}

@@ -205,7 +205,13 @@ func readInputStdin() {
 		parts := strings.Split(input, helper.MSG_DELIM)
 		if len(parts) < 2 {
 			if parts[0] == "list" {
+				fmt.Printf("currently %d peers connected:\n", len(hub.List()))
 				hub.PrintAll()
+			} else if parts[0] == "dirs" {
+				fmt.Printf("currently %d directors:\n", len(directorAddrs))
+				for _, a := range directorAddrs {
+					fmt.Printf("\t\t%s\n", a)
+				}
 			} else {
 				log.Println("readInput: invalid input: input must be of form [subject]#[body]")
 			}

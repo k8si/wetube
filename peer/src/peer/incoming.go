@@ -77,6 +77,7 @@ func serve(c net.Conn) {
 			// directorAddr = parts[0]
 			// directorAddr = m.Sender
 			directorAddrs = append(directorAddrs, m.Sender)
+			broadcast(m)
 			if parts[0] == self {
 				nodeID, err = strconv.Atoi(parts[1])
 				if err != nil {
