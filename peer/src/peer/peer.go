@@ -50,6 +50,7 @@ var hub = &Hub{peers: make(map[string]chan<- Message)}
 func main() {
 	//specify initialization with cmdline arg for now
 	flag.Parse()
+	self = *myAddr
 
 	//configure TLS
 	cert, err := tls.LoadX509KeyPair("cacert.pem", "id_rsa")
@@ -60,29 +61,13 @@ func main() {
 	config.Rand = rand.Reader
 
 	//listen on port 3000 for incoming connections
+	// service := self + ":3000"
 	listener, err := tls.Listen("tcp", ":3000", &config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	self = *myAddr
-
 	log.Printf("listening on self=%s\n", self)
-
-	//if we're the director, invite peers in the file "invitees.txt"
-	//TODO there are probably much better way(s)
-	if *permission == helper.DIRECTOR {
-		takeOffice()
-		done := make(chan []string)
-		go readInvitees(done)
-		<-done
-		log.Println("*** done inviting peers ***")
-		// for _, a := range <-done {
-		// 	if a != "" {
-		// 		fmt.Println("invited ", a)
-		// 	}
-		// }
-	}
 
 	go func() {
 		for {
@@ -93,6 +78,21 @@ func main() {
 			go serve(conn)
 		}
 	}()
+
+	//if we're the director, invite peers in the file "invitees.txt"
+	//TODO there are probably much better way(s)
+	if *permission == helper.DIRECTOR {
+		takeOffice()
+		done := make(chan []string)
+		go readInvitees(done)
+		<-done
+		log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
+		// for _, a := range <-done {
+		// 	if a != "" {
+		// 		fmt.Println("invited ", a)
+		// 	}
+		// }
+	}
 
 	if *interactive {
 		readInputStdin()
