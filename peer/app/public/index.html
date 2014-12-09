@@ -9,31 +9,23 @@
 </head>
 <body>
 	<h1>wetube</h1>
-
-
-
-
-	<!-- <div id="console"></div> -->
-	
 	<div id="ytplayer">
-video goes here
+	Waiting to Connect...
 	</div>
 
 
 	<script type="text/javascript">
-	// var params = { allowScriptAccess: "always" };
-	// swfobject.embedSWF("http://www.youtube.com/v/tFI7JAybF6E&enablejsapi=1&playerapiid=ytplayer", "ytplayer", "425", "365", "8", null, null, params);
 	function play(){ if(ytplayer) ytplayer.playVideo();}
 	function pause(){ if(ytplayer) ytplayer.pauseVideo(); }
 	function stop(){ if(ytplayer) ytplayer.stopVideo(); }
 	function loadNewVideo(id){ if (ytplayer) ytplayer.loadVideoById(id, 0); }
 	</script>
 
-		<div id="connect">
-		<!-- <div>what's your ip address? <input type="text" value="" name="ipaddr" id="ipaddr" /></div> -->
-		<div><input type="button" value="connect" id="connect-button" class="button"/></div>
-		status: <div id="status">disconnected</div>
-		permission: <div id="permission">none</div>
+	<div id="connect">
+	<!-- <div>what's your ip address? <input type="text" value="" name="ipaddr" id="ipaddr" /></div> -->
+	<div><input type="button" value="connect" id="connect-button" class="button"/></div>
+	status: <div id="status">disconnected</div>
+	permission: <div id="permission">none</div>
 	</div>
 
 	<div>
@@ -66,7 +58,13 @@ video goes here
 
 	</tr>
 </table>
-	</div>
+</div>
+
+<div id="invite">
+	<div>invite (IP addr) <input type="text" value="" name="ipaddr" id="ipaddr" /></div>
+	<div>permission (0-2) <input type="text" value="" name="perm" id="perm" /></div>
+	<div><input type="submit" value="invite" id="invite-button"/></div>
+</div>
 
 </body>
 </html>

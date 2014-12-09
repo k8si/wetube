@@ -7,7 +7,7 @@ import (
 	// "net"
 	"flag"
 	"net/http"
-	// "strings"
+	"strings"
 )
 
 const (
@@ -85,7 +85,12 @@ func listen(ws *websocket.Conn) {
 
 func sendToClient(msg string) string {
 	fmt.Println("relaying message: ", msg)
-	req := "http://localhost:3001/jsclient?msg=" + msg
+	var req string
+	if strings.HasPrefix(msg, "invite") {
+		req = "http://localhost:3001/inv?" + msg
+	} else {
+		req = "http://localhost:3001/jsclient?msg=" + msg
+	}
 	res, err := http.Get(req)
 	if err != nil {
 		panic(err.Error())

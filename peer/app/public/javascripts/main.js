@@ -3,7 +3,7 @@ var conn;
 var host, port, service;
 var ipaddr;
 var sockport = '8080';
-var permission;
+var permission = 0;
 
 statvals = {"CONN": 2, "ING": 1, "DIS": 0};
 datavals = {"SUCC": "1", "FAIL": "0"}
@@ -11,16 +11,13 @@ datavals = {"SUCC": "1", "FAIL": "0"}
 $(function() {
 	$('#connect-button').click(function() {
 		status = statvals['DIS'];
-		ipaddr = $('#ipaddr').val();
+		// ipaddr = $('#ipaddr').val();
 		// if ((ipaddr == null) || (ipaddr == '')) {
 			// alert('you need to provide an ip address');
 			// return;
 		// }
-
-		service = ipaddr;
-		// var sockurl = 'ws://'+ipaddr+':3000/ws';
+		// service = ipaddr;
 		var sockurl = 'ws://localhost:4000/jscli';
-		// var sockurl = 'ws://'+ipaddr+':3000/jscli';
 		console.log('trying to connect to: ' + sockurl);
 		ws = new WebSocket(sockurl);
 		if (ws == null) {
@@ -70,18 +67,6 @@ $(function() {
 							}
 							break;
 					}
-					// if (msg == "play") {
-					// 	$('#play-res').click();
-					// }
-					// if (msg == "pause") {
-					// 	$('#pause-res').click();
-					// }
-					// if (msg == "stop") {
-					// 	$('#stop-res').click();
-					// }
-					// if (msg == "load") {
-					// 	$('#load-res').click();
-					// }
 				})
 				reader.readAsText(event.data);
 			} else {
@@ -130,6 +115,28 @@ $(function() {
 			alert('there was some error');
 		}
 	}
+
+	$('#invite-button').click(function() {
+		if (permission != undefined && permission == 0) {
+			var ipaddr = $('#ipaddr').val();
+			if ((ipaddr == null) || (ipaddr == '')) {
+				alert('you need to provide an ip address');
+				return;
+			}
+			var perm = $('#perm').val();
+			if ((perm == null) || (perm == '')) {
+				alert('you need to provide a permission level');
+				return;
+			}
+			var msg = "invite=" + ipaddr + '&perm=' + perm;
+			console.log("invite message: " + msg);
+			sendMessage(msg);
+		} else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
+	});
+
 
 	$('#play-button').click(function() {
 		if (permission != undefined && permission < 2) sendMessage('play');

@@ -23,22 +23,17 @@ After you're done with everything, or if you want to start over, you can run `./
 * *Nix OS (this code was tested on OSX Yosemite and Ubuntu 14.04.1 LTS)
 * node and npm
 * go
+* openssl
 
 # Kicking the Tires
 
 ### Initializing the Network
 
-In order to initialize the wetube network, the first director node expects a file called `invitees.txt` that looks something like:
+In order to initialize the wetube network, the user has to explicitly specify that the first node has permission 0, like so:
 
-			173.194.123.3 1
-			173.194.123.9 2
-			173.194.123.14 1
-			...
+			./wetube --ip=[your ip address] --permission=0
 
-where the first column contains the public IP addresses of peers to invite and the second column contains a permission level, which can range between 0 = director, 1 = editor, 2 = viewer. In order to create this initial director node, from `WETUBE_ROOT` call:
-
-			./wetube --ip=[your ip address] --permission=0 --invite=[path/to/invitees.txt]
-
+Then, the user can submit addresses to invite to the network via the browser interface.
 
 ### Interactive Mode
 

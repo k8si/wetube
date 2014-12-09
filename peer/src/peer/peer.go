@@ -6,21 +6,6 @@ references:
 - https://gist.github.com/spikebike/2232102
 */
 
-/*
-TODO
-- connection endpoints that quit aren't removed until another message is broadcast (more or less) (this is probably a problem for director elections)
-- voting for new director has deadlock/race condition bugs
-
-TODO (longterm)
-- election procedure probably wont survive multiple directors (e.g. multiple peers will be assigned ID "1")
-- IN GENERAL need to deal with having multiple directors
-- sending permissions
-- digital signatures
-- deal with InsecureSkipVerify
-- Youtube API
-- tests
-*/
-
 import (
 	"bufio"
 	"crypto/rand"
@@ -42,8 +27,8 @@ import (
 
 var (
 	myAddr      = flag.String("ip", "", "your public ip address") //TODO this is just "self"
-	interactive = flag.Bool("i", false, "interactive mode")
-	permission  = flag.Int("perm", 2, "permission [0=DIR|1=EDIT|2=VIEW]")
+	interactive = flag.Bool("interactive", false, "interactive mode")
+	permission  = flag.Int("permission", 2, "permission [0=DIR|1=EDIT|2=VIEW]")
 	self        string
 	nodeID      int
 	privkey     *rsa.PrivateKey
@@ -97,13 +82,13 @@ func main() {
 	//TODO there are probably much better/cleaner/faster/less ghetto way(s) to do all of this.....
 	if *permission == helper.DIRECTOR {
 		takeOffice()
-		done := make(chan []string)
-		go readInvitees(done)
-		<-done
-		log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
-		if *interactive {
-			sendToGui("hi")
-		}
+		// done := make(chan []string)
+		// go readInvitees(done)
+		// <-done
+		// log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
+		// if *interactive {
+		// 	sendToGui("hi")
+		// }
 	}
 
 	if *interactive {
@@ -183,6 +168,61 @@ func readInput() {
 		if *permission < helper.VIEWER {
 			broadcast(m)
 		}
+		// parts := strings.Split(msg, "&")
+		// log.Println(parts)
+		// if len(parts) == 2 && parts[0] == "invite" && *permission == helper.DIRECTOR {
+		// 	p := strings.Split(parts[1], "&")
+		// 	addr := p[0]
+		// 	perm := p[1]
+		// 	// addr := parts[1]
+		// 	// invite := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: parts[1]}
+		// 	// broadcast(invite)
+		// 	done := make(chan int)
+		// 	invitePeer(addr, perm, done)
+		// 	<-done
+		// } else {
+		// 	m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
+		// 	if *permission < helper.VIEWER {
+		// 		broadcast(m)
+		// 	}
+		// }
+	})
+	http.HandleFunc("/inv", func(w http.ResponseWriter, r *http.Request) {
+		msg := r.URL.Query()
+		log.Printf("got jsclient message: %s\n", msg)
+		if *permission == 0 {
+			addr := msg["invite"][0]
+			perm := msg["perm"][0]
+			log.Println("inviting peer @ ", addr, "with permission", perm)
+			done := make(chan int)
+			go invitePeer(addr, perm, done)
+			<-done
+		}
+		// addr := msg[0]
+		// perm := msg["perm"]
+		// fmt.Println(addr, " ", perm)
+		// m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
+		// if *permission < helper.VIEWER {
+		// broadcast(m)
+		// }
+		// parts := strings.Split(msg, "&")
+		// log.Println(parts)
+		// if len(parts) == 2 && parts[0] == "invite" && *permission == helper.DIRECTOR {
+		// 	p := strings.Split(parts[1], "&")
+		// 	addr := p[0]
+		// 	perm := p[1]
+		// 	// addr := parts[1]
+		// 	// invite := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: parts[1]}
+		// 	// broadcast(invite)
+		// 	done := make(chan int)
+		// 	invitePeer(addr, perm, done)
+		// 	<-done
+		// } else {
+		// 	m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
+		// 	if *permission < helper.VIEWER {
+		// 		broadcast(m)
+		// 	}
+		// }
 	})
 	err2 := http.ListenAndServe("localhost:3001", nil)
 	if err2 != nil {
@@ -197,6 +237,7 @@ the legal messages are:
 	dirs -- lists all connected directors
 */
 func readInputStdin() {
+	fmt.Println("\n\t\t\t *** INTERACTIVE MODE *** \n")
 	r := bufio.NewReader(os.Stdin)
 	for {
 		s, err := r.ReadString('\n')
