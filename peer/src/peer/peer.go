@@ -12,8 +12,6 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	// "cryptostuff"
-	// "encoding/pem"
 	"flag"
 	"fmt"
 	"helper"
@@ -78,17 +76,8 @@ func main() {
 		}
 	}()
 
-	//if we're the director, invite peers in the file "invitees.txt"
-	//TODO there are probably much better/cleaner/faster/less ghetto way(s) to do all of this.....
 	if *permission == helper.DIRECTOR {
 		takeOffice()
-		// done := make(chan []string)
-		// go readInvitees(done)
-		// <-done
-		// log.Printf("*** done inviting peers. connected to %d. ***\n", hub.Size())
-		// if *interactive {
-		// 	sendToGui("hi")
-		// }
 	}
 
 	if *interactive {
@@ -96,43 +85,6 @@ func main() {
 	} else {
 		readInput()
 	}
-}
-
-func readInvitees(done chan []string) {
-	log.SetPrefix("invite: ")
-	//map of {address: permission} read from "invitees.txt"
-	invited := make(map[string]chan int)
-	numpeers := 0
-	f, err := os.Open("invitees.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		parts := strings.Split(scanner.Text(), " ")
-		if len(parts) != 2 {
-			log.Fatal("bad line in invitees.txt")
-		}
-		addr := parts[0]
-		numpeers += 1
-		ch := make(chan int)
-		invited[addr] = ch
-		go invitePeer(addr, parts[1], ch)
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	addrs := make([]string, numpeers)
-	for a, v := range invited {
-		if <-v == 0 {
-			addrs = append(addrs, a)
-		} else {
-			addrs = append(addrs, "")
-		}
-	}
-	done <- addrs
-
 }
 
 func invitePeer(addr string, perm string, done chan int) {
@@ -230,3 +182,41 @@ func readInputStdin() {
 		}
 	}
 }
+
+/*
+func readInvitees(done chan []string) {
+	log.SetPrefix("invite: ")
+	//map of {address: permission} read from "invitees.txt"
+	invited := make(map[string]chan int)
+	numpeers := 0
+	f, err := os.Open("invitees.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		parts := strings.Split(scanner.Text(), " ")
+		if len(parts) != 2 {
+			log.Fatal("bad line in invitees.txt")
+		}
+		addr := parts[0]
+		numpeers += 1
+		ch := make(chan int)
+		invited[addr] = ch
+		go invitePeer(addr, parts[1], ch)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	addrs := make([]string, numpeers)
+	for a, v := range invited {
+		if <-v == 0 {
+			addrs = append(addrs, a)
+		} else {
+			addrs = append(addrs, "")
+		}
+	}
+	done <- addrs
+}
+*/

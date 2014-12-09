@@ -61,7 +61,6 @@ to
 
 
 * If you're running on EC2, sometimes ExpressJS *mysteriously* doesn't work -- see [this](http://iws.io/hosting-a-nodejs-express-application-on-amazon-web-services-ec2/), you have to do the parts about `nvm` for some reason.
-* I can't `npm install` anything on the edlab machines. Maybe there's a way, I'm too tired to figure it out.
 * During `./build.sh`, the edlab machines throw this error:
 
 			go building...
@@ -75,26 +74,9 @@ to
 			./handlegui.go:5: import /nfs/elsrv4/users2/grad/ksilvers/cs630/wetube/peer/pkg/linux_386/golang.org/x/net/websocket.a: not a package file
 			/nfs/elsrv4/users2/grad/ksilvers/cs630/wetube
 
-but no on else does.
+but not on my local machine or EC2. I'm not sure what the solution is to this yet (TODO).
 
 # References
 
 * https://code.google.com/p/whispering-gophers/source/browse/master/main.go
 * https://gist.github.com/spikebike/2232102
-
-
-
-
-
-
-
-# links
-* [old/broken tcp chat client&server](http://raycompstuff.blogspot.com/2009/12/simpler-chat-server-and-client-in.html)
-* [project iris](https://github.com/project-iris/iris)
-* [stackoverflow/p2p connectivity/udp "hole punching"](http://stackoverflow.com/questions/8523330/programming-p2p-application/8524609#8524609)
-* [peerjs](http://peerjs.com/)
-* [http-server](https://github.com/nodeapps/http-server)
-* [websockets](https://developer.mozilla.org/en-US/docs/WebSockets)
-* [go websockets api](http://godoc.org/golang.org/x/net/websocket)
-* [go websockets tutorial](http://www.ajanicij.info/content/websocket-tutorial-go)
-
