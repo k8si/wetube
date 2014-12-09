@@ -11,13 +11,14 @@ datavals = {"SUCC": "1", "FAIL": "0"}
 $(function() {
 	$('#connect-button').click(function() {
 		status = statvals['DIS'];
-		// ipaddr = $('#ipaddr').val();
-		// if ((ipaddr == null) || (ipaddr == '')) {
-			// alert('you need to provide an ip address');
-			// return;
-		// }
-		// service = ipaddr;
+
+
+		/* change this line to:
+		 ws://[remote-ip-addr]:4000/jscli 
+		 if you're trying to access on remote host */
 		var sockurl = 'ws://localhost:4000/jscli';
+
+
 		console.log('trying to connect to: ' + sockurl);
 		ws = new WebSocket(sockurl);
 		if (ws == null) {
@@ -25,7 +26,6 @@ $(function() {
 			return;
 		} else {
 			console.log('socket creation successful');
-			// "http://www.youtube.com/v/4kQnrKvOTNg&enablejsapi=1&playerapiid=ytplayer",
 			var params = { allowScriptAccess: "always" };
 			swfobject.embedSWF("http://www.youtube.com/apiplayer?enablejsapi=1&playerapiid=ytplayer", "ytplayer", "425", "365", "8", null, null, params);
 		}
@@ -52,18 +52,26 @@ $(function() {
 					console.log(msg)
 					switch (msg) {
 						case "play":
-							$('#play-res').click(); break;
+							if (ytplayer) ytplayer.playVideo();
+							break;
 						case "pause":
-							$('#pause-res').click(); break;
+							if(ytplayer) ytplayer.pauseVideo();
+							break;
 						case "stop":
-							$('#stop-res').click(); break;
-						case "load":
-							$('#load-res').click(); break;
+							if(ytplayer) ytplayer.stopVideo();
+							break;
 						default:
-							var parts = msg.split("&")
+							var parts = msg.split("&");
 							if (parts.length == 2 && parts[0] == "perm") {
 								setPermission(parts[1]);
 								permission = parseInt(parts[1]);
+								break;
+							}
+							parts = msg.split("=");
+							if (parts.length == 2) {
+								console.log("got load message")
+								if (ytplayer) ytplayer.loadVideoById(parts[1], 0);
+								break;
 							}
 							break;
 					}
@@ -137,38 +145,54 @@ $(function() {
 		}
 	});
 
+	$('#load-button').click(function() {
+		if (permission != undefined && permission == 0) {
+			var vidid = $('#vidid').val();
+			if ((vidid == null) || (vidid =='')) {
+				alert('you need to provide a video id to load');
+			}
+			var msg = "load=" + vidid
+			console.log("load message: " + msg);
+			sendMessage(msg)
+			if (ytplayer) ytplayer.loadVideoById(vidid, 0);
+		} else {
+			alert("you dont have permission to do that");
+			console.log("permission = " + permission);
+		}
+	});
+
 
 	$('#play-button').click(function() {
-		if (permission != undefined && permission < 2) sendMessage('play');
-		else {
+		if (permission != undefined && permission < 2) { 
+			sendMessage('play');
+			if (ytplayer) ytplayer.playVideo();
+		} else {
 			alert("you dont have permission to do that");
 			console.log("permission = " + permission);
 		}
 	});
 
 	$('#pause-button').click(function() {
-		if (permission && permission < 2) sendMessage('pause');
-		else {
+		if (permission != undefined && permission < 2) {
+			sendMessage('pause');
+			if(ytplayer) ytplayer.pauseVideo(); 
+		} else {
 			alert("you dont have permission to do that");
 			console.log("permission = " + permission);
 		}
 	});
 
 	$('#stop-button').click(function() {
-		if (permission && permission < 2) sendMessage('stop');
-		else {
+		if (permission != undefined && permission < 2) {
+			sendMessage('stop');
+			if(ytplayer) ytplayer.stopVideo();
+		} else {
 			alert("you dont have permission to do that");
 			console.log("permission = " + permission);
 		}
 	});
 
-	$('#load-button').click(function() {
-		if (permission && permission == 0) sendMessage('load')
-		else {
-			alert("you dont have permission to do that");
-			console.log("permission = " + permission);
-		}
-	});
+
 
 
 });

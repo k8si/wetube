@@ -53,22 +53,15 @@ func serve(c net.Conn) {
 
 		verified := m.verify()
 		if !verified {
-			fmt.Println("failed to verify message")
+			fmt.Printf("(< %v) serve: failed to verify message.\n", c.RemoteAddr())
 			continue
 		}
+		fmt.Printf("(< %v) serve: VERIFIED id=%s\n", c.RemoteAddr(), m.ID)
 
 		go dial(m.Sender, nil)
 
 		/* ROUTES */
 		switch m.Subject {
-		case "ping":
-			addr := m.Body
-			if addr == "" || len(addr) == 0 || addr == self {
-				log.Printf("bad ping: %s\n", addr)
-			} else {
-				fmt.Printf("*** got ping for %s ***\n", m.Body)
-				log.Printf("good ping: %s. about to dial.", addr)
-			}
 
 		//message requesting some info about me
 		case "request":
@@ -119,6 +112,9 @@ func serve(c net.Conn) {
 		case "welcome", "newdirector":
 			theresANewDirector(m)
 
+		case "ping":
+			break
+
 		default:
 			log.Fatalf("(< %s) serve: invalid message: %s %s %s", m.Sender, m.Subject, m.Body)
 			// go dial(m.Sender, nil)
@@ -160,18 +156,12 @@ func theresANewDirector(m Message) {
 
 /* send messages to gui */
 func sendToGui(msg string) {
-	fmt.Println("sendToGui(): got msg = ", msg)
+	// fmt.Println("sendToGui(): got msg = ", msg)
 	p := *permission
-	fmt.Printf("have permission = %d\n", p)
+	// fmt.Printf("have permission = %d\n", p)
 	ps := strconv.Itoa(p)
 	pm := "&perm=" + ps
-	// r := "http://localhost:4000/input?msg=" + pm
-	// _, err := http.Get(r)
-	// if err != nil {
-	// 	log.Println(err)
-	// }
-
-	fmt.Println("sending ", msg, "to gui")
+	// fmt.Println("sending ", msg, "to gui")
 	req := "http://localhost:4000/input?msg=" + msg + pm
 	_, err := http.Get(req)
 	if err != nil {
@@ -182,11 +172,11 @@ func sendToGui(msg string) {
 var ping = Message{ID: helper.RandomID(), Subject: "ping"}
 
 func sendPing() {
-	log.SetPrefix("sendPing: ")
+	// log.SetPrefix("sendPing: ")
 	if hub.Size() > 0 {
 		ping.Sender = self
 		for _, a := range hub.ListAddrs() {
-			log.Println("ping: address ", a)
+			// log.Println("ping: address ", a)
 			ping.Body = a
 			broadcast(ping)
 		}

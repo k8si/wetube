@@ -17,7 +17,7 @@ const (
 )
 
 var browserConn *websocket.Conn
-var service = flag.String("service", "localhost:4000", "[IP addr]:[port] to listen on")
+var service = flag.String("service", ":4000", "[IP addr]:[port] to listen on")
 
 func main() {
 	flag.Parse()

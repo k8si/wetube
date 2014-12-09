@@ -13,16 +13,7 @@
 	Waiting to Connect...
 	</div>
 
-
-	<script type="text/javascript">
-	function play(){ if(ytplayer) ytplayer.playVideo();}
-	function pause(){ if(ytplayer) ytplayer.pauseVideo(); }
-	function stop(){ if(ytplayer) ytplayer.stopVideo(); }
-	function loadNewVideo(id){ if (ytplayer) ytplayer.loadVideoById(id, 0); }
-	</script>
-
 	<div id="connect">
-	<!-- <div>what's your ip address? <input type="text" value="" name="ipaddr" id="ipaddr" /></div> -->
 	<div><input type="button" value="connect" id="connect-button" class="button"/></div>
 	status: <div id="status">disconnected</div>
 	permission: <div id="permission">none</div>
@@ -33,27 +24,20 @@
 			<tr>
 			
 			<td>
-		<a href="javascript:void(0);" onclick="play();" id="play-res">
-			<input type="button" value="play" id="play-button" class="ctrl"/>
-		</a>
+			<a href="#" id="play-rec"><input type="button" value="play" id="play-button" class="ctrl"/></a>
 	</td>
 
 	<td>
-				<a href="javascript:void(0);" onclick="pause();" id="pause-res">
-			<input type="button" value="pause" id="pause-button" class="ctrl"/>
-		</a>
+			<a href="#" id="pause-rec"><input type="button" value="pause" id="pause-button" class="ctrl"/></a>		
 	</td>
 
 		<td>
-				<a href="javascript:void(0);" onclick="stop();" id="stop-res">
-			<input type="button" value="stop" id="stop-button" class="ctrl"/>
-		</a>
+			<a href="#" id="stop-rec"><input type="button" value="stop" id="stop-button" class="ctrl"/></a>
 	</td>
 
 		<td>
-				<a href="javascript:void(0);" onclick="loadNewVideo('4kQnrKvOTNg');" id="load-res">
-			<input type="button" value="load" id="load-button" class="ctrl"/>
-		</a>
+			<div>video id:<input type="text" value="4kQnrKvOTNg" name="vidid" id="vidid" /></div>
+			<a href="#" id="load-rec"><input type="button" value="load" id="load-button" class="ctrl"/></a>
 	</td>
 
 	</tr>

@@ -11,7 +11,7 @@ import (
 )
 
 func broadcast(msg Message) {
-	log.Printf("broadcasting: subject=%s, body=%s", msg.Subject, msg.Body)
+	// log.Printf("broadcasting: subject=%s, body=%s", msg.Subject, msg.Body)
 	for _, ch := range hub.List() {
 		select {
 		case ch <- msg:

@@ -163,33 +163,15 @@ func invitePeer(addr string, perm string, done chan int) {
 func readInput() {
 	http.HandleFunc("/jsclient", func(w http.ResponseWriter, r *http.Request) {
 		msg := r.URL.Query()["msg"][0]
-		log.Printf("got jsclient message: %s\n", msg)
+		// log.Printf("got jsclient message: %s\n", msg)
 		m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
 		if *permission < helper.VIEWER {
 			broadcast(m)
 		}
-		// parts := strings.Split(msg, "&")
-		// log.Println(parts)
-		// if len(parts) == 2 && parts[0] == "invite" && *permission == helper.DIRECTOR {
-		// 	p := strings.Split(parts[1], "&")
-		// 	addr := p[0]
-		// 	perm := p[1]
-		// 	// addr := parts[1]
-		// 	// invite := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: parts[1]}
-		// 	// broadcast(invite)
-		// 	done := make(chan int)
-		// 	invitePeer(addr, perm, done)
-		// 	<-done
-		// } else {
-		// 	m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
-		// 	if *permission < helper.VIEWER {
-		// 		broadcast(m)
-		// 	}
-		// }
 	})
 	http.HandleFunc("/inv", func(w http.ResponseWriter, r *http.Request) {
 		msg := r.URL.Query()
-		log.Printf("got jsclient message: %s\n", msg)
+		// log.Printf("got jsclient message: %s\n", msg)
 		if *permission == 0 {
 			addr := msg["invite"][0]
 			perm := msg["perm"][0]
@@ -198,31 +180,6 @@ func readInput() {
 			go invitePeer(addr, perm, done)
 			<-done
 		}
-		// addr := msg[0]
-		// perm := msg["perm"]
-		// fmt.Println(addr, " ", perm)
-		// m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
-		// if *permission < helper.VIEWER {
-		// broadcast(m)
-		// }
-		// parts := strings.Split(msg, "&")
-		// log.Println(parts)
-		// if len(parts) == 2 && parts[0] == "invite" && *permission == helper.DIRECTOR {
-		// 	p := strings.Split(parts[1], "&")
-		// 	addr := p[0]
-		// 	perm := p[1]
-		// 	// addr := parts[1]
-		// 	// invite := Message{ID: helper.RandomID(), Sender: self, Subject: "invite", Body: parts[1]}
-		// 	// broadcast(invite)
-		// 	done := make(chan int)
-		// 	invitePeer(addr, perm, done)
-		// 	<-done
-		// } else {
-		// 	m := Message{ID: helper.RandomID(), Sender: self, Subject: "msg", Body: msg}
-		// 	if *permission < helper.VIEWER {
-		// 		broadcast(m)
-		// 	}
-		// }
 	})
 	err2 := http.ListenAndServe("localhost:3001", nil)
 	if err2 != nil {

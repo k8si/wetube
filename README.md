@@ -49,7 +49,17 @@ Interactive mode allows you to send messages and list currently connected peers/
 
 # Probable Problems
 
-* If you're running wetube on a remote host e.g. EC2, you can't visit "localhost:4000" and get the server -- you have to visit "[EC2-IP]:4000". Since the websockets URL is hardcoded into Javascript, this messes up the GUI and causes errors. *(TODO explanation)*
+* Wetube peers will receive incoming traffic from the outside world on ports 8080 (HTTP) and 3000 (TCP). Ports may have to be forwarded; iptables may have to change.
+
+* If you're running wetube on a remote host e.g. EC2, you can't visit "localhost:4000" and get the server -- you have to visit "[EC2-IP]:4000". Since the websockets URL is hardcoded into Javascript, this messes up the GUI and causes errors. In order to solve this problem, just change line 19 of `peer/app/public/javascripts/main.js' from:
+
+					var sockurl = 'ws://localhost:4000/jscli';
+
+to
+
+					var sockurl = 'ws://[remote-host-ip-address]:4000/jscli';
+
+
 * If you're running on EC2, sometimes ExpressJS *mysteriously* doesn't work -- see [this](http://iws.io/hosting-a-nodejs-express-application-on-amazon-web-services-ec2/), you have to do the parts about `nvm` for some reason.
 * I can't `npm install` anything on the edlab machines. Maybe there's a way, I'm too tired to figure it out.
 * During `./build.sh`, the edlab machines throw this error:
